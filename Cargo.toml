@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 exclude = ["main.rs"]
 repository = "https://github.com/ThatBooRadley/minifb_tile_base"
+description = "A basic tile updater for minifb"
 
 [profile.dev]
 overflow-checks = false
