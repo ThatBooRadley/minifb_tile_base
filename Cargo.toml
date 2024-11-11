@@ -2,10 +2,12 @@
 name = "minifb_tile_base"
 version = "0.1.0"
 edition = "2021"
+exclude = ["main.rs"]
+repository = "https://github.com/ThatBooRadley/minifb_tile_base"
 
 [profile.dev]
 overflow-checks = false
 
 [dependencies]
-minifb = "*"
-rayon = "*"
+minifb = "0.27.0"
+rayon = "1.10.0"

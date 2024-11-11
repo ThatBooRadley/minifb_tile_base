@@ -1,5 +1,5 @@
 use minifb::Key;
-use minifb_test::window::WindowController;
+use minifb_tile_base::window::WindowController;
 
 const WIDTH: usize = 100;
 const HEIGHT: usize = 100;
