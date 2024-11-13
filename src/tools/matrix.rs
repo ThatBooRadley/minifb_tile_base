@@ -82,7 +82,8 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .for_each(|(i, j, value)| self.set(x + i, y + j, value.clone()))
     }
 
-    /// Lists values in matrix with width and height starting at (x, y).
+    /// Lists values in matrix with width and height starting at (x, y). Has possibility to return
+    /// less values because they're out of bounds.
     pub fn clamp(
         &self,
         x: usize,
@@ -95,6 +96,23 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .skip(y)
             .take(height)
             .flat_map(move |chunk| chunk.iter().skip(x).take(width))
+    }
+
+    /// Lists values in matrix with width and height starting at (x, y) wrapping to fill all
+    /// values.
+    pub fn clamp_wrap(
+        &self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &T> {
+        self.values
+            .chunks(self.width)
+            .cycle()
+            .skip(y)
+            .take(height)
+            .flat_map(move |chunk| chunk.iter().cycle().skip(x).take(width))
     }
 
     #[cfg(feature = "parallel")]
@@ -117,5 +135,35 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
         matrix
             .par_enumerate()
             .for_each(|(sub_x, sub_y, value)| self.set(x + sub_x, y + sub_y, value.clone()))
+    }
+    #[cfg(feature = "parallel")]
+    pub fn par_clamp(
+        &self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &T> {
+        self.values
+            .par_chunks(self.width)
+            .skip(y)
+            .take(height)
+            .flat_map_iter(move |chunk| chunk.iter().skip(x).take(width))
+    }
+
+    #[cfg(feature = "parallel")]
+    pub fn par_clamp_wrap(
+        &self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &T> {
+        self.values
+            .par_chunks(self.width)
+            .cycle()
+            .skip(y)
+            .take(height)
+            .flat_map_iter(move |chunk| chunk.iter().cycle().skip(x).take(width))
     }
 }
