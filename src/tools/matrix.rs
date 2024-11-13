@@ -1,9 +1,11 @@
+use std::fmt::Debug;
+
 #[cfg(feature = "parallel")]
 use rayon::{iter::*, prelude::*};
 
 /// Matrix is a 2D representation of a vector.
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Matrix<T: Default + Clone + Sync + Send> {
     pub values: Vec<T>,
     pub width: usize,
@@ -77,7 +79,22 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     pub fn overlay(&mut self, matrix: &Matrix<T>, x: usize, y: usize) {
         matrix
             .enumerate()
-            .for_each(|(sub_x, sub_y, value)| self.set(x + sub_x, y + sub_y, value.clone()))
+            .for_each(|(i, j, value)| self.set(x + i, y + j, value.clone()))
+    }
+
+    /// Lists values in matrix with width and height starting at (x, y).
+    pub fn clamp(
+        &self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &T> {
+        self.values
+            .chunks(self.width)
+            .skip(y)
+            .take(height)
+            .flat_map(move |chunk| chunk.iter().skip(x).take(width))
     }
 
     #[cfg(feature = "parallel")]
