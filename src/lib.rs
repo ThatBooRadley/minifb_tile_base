@@ -4,5 +4,5 @@
 pub mod tools {
     pub mod matrix;
 }
-
+pub mod tile;
 pub mod window;
