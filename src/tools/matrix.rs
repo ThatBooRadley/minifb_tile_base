@@ -1,9 +1,11 @@
+use std::fmt::Debug;
+
 #[cfg(feature = "parallel")]
 use rayon::{iter::*, prelude::*};
 
 /// Matrix is a 2D representation of a vector.
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug)]
 pub struct Matrix<T: Default + Clone + Sync + Send> {
     pub values: Vec<T>,
     pub width: usize,
@@ -61,38 +63,71 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
 
     pub fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &T)> {
         self.values
-            .chunks(self.width)
+            .iter()
             .enumerate()
-            .flat_map(|(y, chunk)| chunk.iter().enumerate().map(move |(x, t)| (x, y, t)))
+            .map(|(i, t)| (i % self.width, i / self.width, t))
     }
 
     pub fn enumerate_mut(&mut self) -> impl Iterator<Item = (usize, usize, &mut T)> {
         self.values
-            .chunks_mut(self.width)
+            .iter_mut()
             .enumerate()
-            .flat_map(|(y, chunk)| chunk.iter_mut().enumerate().map(move |(x, t)| (x, y, t)))
+            .map(|(i, t)| (i % self.width, i / self.width, t))
     }
 
     /// Overlays matrix with other given matrix starting at position (x, y).
     pub fn overlay(&mut self, matrix: &Matrix<T>, x: usize, y: usize) {
         matrix
             .enumerate()
-            .for_each(|(sub_x, sub_y, value)| self.set(x + sub_x, y + sub_y, value.clone()))
+            .for_each(|(i, j, value)| self.set(x + i, y + j, value.clone()))
+    }
+
+    /// Lists values in matrix with width and height starting at (x, y). Has possibility to return
+    /// less values because they're out of bounds.
+    pub fn clamp(
+        &self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &T> {
+        self.values
+            .chunks(self.width)
+            .skip(y)
+            .take(height)
+            .flat_map(move |chunk| chunk.iter().skip(x).take(width))
+    }
+
+    /// Lists values in matrix with width and height starting at (x, y) wrapping to fill all
+    /// values.
+    pub fn clamp_wrap(
+        &self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &T> {
+        self.values
+            .chunks(self.width)
+            .cycle()
+            .skip(y)
+            .take(height)
+            .flat_map(move |chunk| chunk.iter().cycle().skip(x).take(width))
     }
 
     #[cfg(feature = "parallel")]
     pub fn par_enumerate(&self) -> impl ParallelIterator<Item = (usize, usize, &T)> {
         self.values
-            .par_chunks(self.width)
+            .par_iter()
             .enumerate()
-            .flat_map_iter(|(y, chunk)| chunk.iter().enumerate().map(move |(x, t)| (x, y, t)))
+            .map(|(i, t)| (i % self.width, i / self.width, t))
     }
     #[cfg(feature = "parallel")]
     pub fn par_enumerate_mut(&mut self) -> impl ParallelIterator<Item = (usize, usize, &mut T)> {
         self.values
-            .par_chunks_mut(self.width)
+            .par_iter_mut()
             .enumerate()
-            .flat_map_iter(|(y, chunk)| chunk.iter_mut().enumerate().map(move |(x, t)| (x, y, t)))
+            .map(|(i, t)| (i % self.width, i / self.width, t))
     }
 
     #[cfg(feature = "parallel")]
@@ -100,5 +135,35 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
         matrix
             .par_enumerate()
             .for_each(|(sub_x, sub_y, value)| self.set(x + sub_x, y + sub_y, value.clone()))
+    }
+    #[cfg(feature = "parallel")]
+    pub fn par_clamp(
+        &self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &T> {
+        self.values
+            .par_chunks(self.width)
+            .skip(y)
+            .take(height)
+            .flat_map_iter(move |chunk| chunk.iter().skip(x).take(width))
+    }
+
+    #[cfg(feature = "parallel")]
+    pub fn par_clamp_wrap(
+        &self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &T> {
+        self.values
+            .par_chunks(self.width)
+            .cycle()
+            .skip(y)
+            .take(height)
+            .flat_map_iter(move |chunk| chunk.iter().cycle().skip(x).take(width))
     }
 }
