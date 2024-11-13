@@ -63,16 +63,16 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
 
     pub fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &T)> {
         self.values
-            .chunks(self.width)
+            .iter()
             .enumerate()
-            .flat_map(|(y, chunk)| chunk.iter().enumerate().map(move |(x, t)| (x, y, t)))
+            .map(|(i, t)| (i % self.width, i / self.width, t))
     }
 
     pub fn enumerate_mut(&mut self) -> impl Iterator<Item = (usize, usize, &mut T)> {
         self.values
-            .chunks_mut(self.width)
+            .iter_mut()
             .enumerate()
-            .flat_map(|(y, chunk)| chunk.iter_mut().enumerate().map(move |(x, t)| (x, y, t)))
+            .map(|(i, t)| (i % self.width, i / self.width, t))
     }
 
     /// Overlays matrix with other given matrix starting at position (x, y).
@@ -118,16 +118,16 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     #[cfg(feature = "parallel")]
     pub fn par_enumerate(&self) -> impl ParallelIterator<Item = (usize, usize, &T)> {
         self.values
-            .par_chunks(self.width)
+            .par_iter()
             .enumerate()
-            .flat_map_iter(|(y, chunk)| chunk.iter().enumerate().map(move |(x, t)| (x, y, t)))
+            .map(|(i, t)| (i % self.width, i / self.width, t))
     }
     #[cfg(feature = "parallel")]
     pub fn par_enumerate_mut(&mut self) -> impl ParallelIterator<Item = (usize, usize, &mut T)> {
         self.values
-            .par_chunks_mut(self.width)
+            .par_iter_mut()
             .enumerate()
-            .flat_map_iter(|(y, chunk)| chunk.iter_mut().enumerate().map(move |(x, t)| (x, y, t)))
+            .map(|(i, t)| (i % self.width, i / self.width, t))
     }
 
     #[cfg(feature = "parallel")]
