@@ -54,6 +54,12 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .flat_map(|(y, chunk)| chunk.iter_mut().enumerate().map(move |(x, t)| (x, y, t)))
     }
 
+    pub fn overlay(&mut self, matrix: &Matrix<T>, x: usize, y: usize) {
+        matrix
+            .enumerate()
+            .for_each(|(sub_x, sub_y, value)| self.set(x + sub_x, y + sub_y, value.clone()))
+    }
+
     #[cfg(feature = "parallel")]
     pub fn par_enumerate(&self) -> impl ParallelIterator<Item = (usize, usize, &T)> {
         self.values
@@ -67,5 +73,12 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .par_chunks_mut(self.width)
             .enumerate()
             .flat_map_iter(|(y, chunk)| chunk.iter_mut().enumerate().map(move |(x, t)| (x, y, t)))
+    }
+
+    #[cfg(feature = "parallel")]
+    pub fn par_overlay(&mut self, matrix: &Matrix<T>, x: usize, y: usize) {
+        matrix
+            .par_enumerate()
+            .for_each(|(sub_x, sub_y, value)| self.set(x + sub_x, y + sub_y, value.clone()))
     }
 }
