@@ -17,7 +17,7 @@ impl WindowController {
     /// Creates a new WindowController with intended matrix width and height.
     /// The scale is only initial scale when the Window is created. It may be rescaled.
     /// The Window is set with target 60fps.
-    pub fn new(name: &str, width: usize, height: usize, scale: Scale) -> Self {
+    pub fn new(name: &str, width: usize, height: usize, scale: Scale, wrapping: bool) -> Self {
         let mut window = Window::new(
             name,
             width,
@@ -34,7 +34,7 @@ impl WindowController {
         window.set_target_fps(60);
 
         Self {
-            matrix: Matrix::new(width, height),
+            matrix: Matrix::new(width, height, wrapping),
             window,
         }
     }

@@ -8,23 +8,42 @@ pub struct Matrix<T: Default + Clone + Sync + Send> {
     pub values: Vec<T>,
     pub width: usize,
     pub height: usize,
+    /// if true, values outside bounds will wrap
+    pub wrapping: bool,
 }
 
 impl<T: Default + Clone + Sync + Send> Matrix<T> {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: usize, height: usize, wrapping: bool) -> Self {
         Self {
             values: vec![T::default(); width * height],
             width,
             height,
+            wrapping,
+        }
+    }
+
+    fn bound(&self, x: usize, y: usize) -> Option<usize> {
+        match (self.width, self.height, self.wrapping) {
+            (w, h, true) => Some((x % w) + ((y % h) * w)),
+            (w, h, false) if w > x && h > y => Some(x + (y * w)),
+            _ => None,
         }
     }
 
     pub fn get(&self, x: usize, y: usize) -> Option<&T> {
-        self.values.get(x + (y * self.width))
+        if let Some(index) = self.bound(x, y) {
+            self.values.get(index)
+        } else {
+            None
+        }
     }
 
     pub fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut T> {
-        self.values.get_mut(x + (y * self.width))
+        if let Some(index) = self.bound(x, y) {
+            self.values.get_mut(index)
+        } else {
+            None
+        }
     }
 
     pub fn set(&mut self, x: usize, y: usize, value: T) {
