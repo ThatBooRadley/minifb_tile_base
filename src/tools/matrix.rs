@@ -77,9 +77,9 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
 
     /// Overlays matrix with other given matrix starting at position (x, y).
     pub fn overlay(&mut self, matrix: &Matrix<T>, x: usize, y: usize) {
-        matrix
-            .enumerate()
-            .for_each(|(i, j, value)| self.set(x + i, y + j, value.clone()))
+        self.clamp_mut(x, y, matrix.width, matrix.height)
+            .zip(matrix.values.iter())
+            .for_each(|(t, u)| *t = u.clone())
     }
 
     /// Lists values in matrix with width and height starting at (x, y). Has possibility to return
@@ -140,11 +140,26 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
         y: usize,
         width: usize,
         height: usize,
-    ) -> impl Iterator<Item = &T> {
+    ) -> impl ParallelIterator<Item = &T> {
         self.values
             .par_chunks(self.width)
             .skip(y)
             .take(height)
             .flat_map_iter(move |chunk| chunk.iter().skip(x).take(width))
+    }
+
+    #[cfg(feature = "parallel")]
+    pub fn par_clamp_mut(
+        &mut self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> impl Iterator<Item = &mut T> {
+        self.values
+            .par_chunks_mut(self.width)
+            .skip(y)
+            .take(height)
+            .flat_map_iter(move |chunk| chunk.iter_mut().skip(x).take(width))
     }
 }
