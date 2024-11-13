@@ -40,14 +40,14 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
         }
     }
 
-    pub fn enumerate(&self) -> impl ParallelIterator<Item = (usize, usize, &T)> {
+    pub fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &T)> {
         self.values
             .chunks(self.width)
             .enumerate()
             .flat_map(|(y, chunk)| chunk.iter().enumerate().map(move |(x, t)| (x, y, t)))
     }
 
-    pub fn enumerate_mut(&mut self) -> impl ParallelIterator<Item = (usize, usize, &mut T)> {
+    pub fn enumerate_mut(&mut self) -> impl Iterator<Item = (usize, usize, &mut T)> {
         self.values
             .chunks_mut(self.width)
             .enumerate()
