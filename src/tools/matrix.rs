@@ -73,6 +73,7 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .flat_map(|(y, chunk)| chunk.iter_mut().enumerate().map(move |(x, t)| (x, y, t)))
     }
 
+    /// Overlays matrix with other given matrix starting at position (x,y)
     pub fn overlay(&mut self, matrix: &Matrix<T>, x: usize, y: usize) {
         matrix
             .enumerate()
