@@ -98,21 +98,18 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .flat_map(move |chunk| chunk.iter().skip(x).take(width))
     }
 
-    /// Lists values in matrix with width and height starting at (x, y) wrapping to fill all
-    /// values.
-    pub fn clamp_wrap(
-        &self,
+    pub fn clamp_mut(
+        &mut self,
         x: usize,
         y: usize,
         width: usize,
         height: usize,
-    ) -> impl Iterator<Item = &T> {
+    ) -> impl Iterator<Item = &mut T> {
         self.values
-            .chunks(self.width)
-            .cycle()
+            .chunks_mut(self.width)
             .skip(y)
             .take(height)
-            .flat_map(move |chunk| chunk.iter().cycle().skip(x).take(width))
+            .flat_map(move |chunk| chunk.iter_mut().skip(x).take(width))
     }
 
     #[cfg(feature = "parallel")]
@@ -149,21 +146,5 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .skip(y)
             .take(height)
             .flat_map_iter(move |chunk| chunk.iter().skip(x).take(width))
-    }
-
-    #[cfg(feature = "parallel")]
-    pub fn par_clamp_wrap(
-        &self,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
-    ) -> impl Iterator<Item = &T> {
-        self.values
-            .par_chunks(self.width)
-            .cycle()
-            .skip(y)
-            .take(height)
-            .flat_map_iter(move |chunk| chunk.iter().cycle().skip(x).take(width))
     }
 }

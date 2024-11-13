@@ -17,11 +17,11 @@ impl<'a> TileLibrary<'a> {
         Self(Vec::new())
     }
 
-    pub fn add(&mut self, tile: &Tile) {
+    pub fn add(&mut self, tile: &'a Tile) {
         self.0.push(tile)
     }
 
-    pub fn get(&self, index: usize) -> Option<&Tile> {
+    pub fn get(&self, index: usize) -> Option<&&Tile> {
         self.0.get(index)
     }
 }
@@ -33,7 +33,6 @@ pub struct TileMap {
     tile_width: usize,
     /// height in pixels of each tile
     tile_height: usize,
-    buffer: Matrix<u32>,
 }
 
 impl TileMap {
