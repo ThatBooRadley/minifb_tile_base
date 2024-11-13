@@ -1,70 +1,39 @@
+use core::panic;
+
 use crate::tools::matrix::Matrix;
 use minifb::{Scale, ScaleMode, Window, WindowOptions};
-use rayon::iter::ParallelIterator;
 
 pub struct WindowController {
-    pub real_window: Matrix<u32>,
-    virtual_window: Matrix<u32>,
-    ratio: usize,
+    pub matrix: Matrix<u32>,
     pub window: Window,
 }
 
 impl WindowController {
-    pub fn new(name: &str, width: usize, height: usize, ratio: usize) -> Self {
-        //width and height correspond to real window size
+    pub fn new(name: &str, width: usize, height: usize, scale: Scale) -> Self {
         let mut window = Window::new(
             name,
-            width * ratio,
-            height * ratio,
+            width,
+            height,
             WindowOptions {
-                scale_mode: ScaleMode::Center,
-                scale: Scale::FitScreen,
+                scale_mode: ScaleMode::AspectRatioStretch,
+                scale,
                 resize: true,
+                borderless: false,
                 ..Default::default()
             },
         )
-        .unwrap_or_else(|e| panic!("{}", e));
+        .unwrap();
         window.set_target_fps(60);
 
         Self {
-            real_window: Matrix::new(width, height),
-            virtual_window: Matrix::new(width * ratio, height * ratio),
-            ratio,
+            matrix: Matrix::new(width, height),
             window,
         }
     }
 
-    pub fn project(&mut self) {
-        self.virtual_window
-            .enumerate_mut()
-            .for_each(|(x, y, item)| {
-                if let Some(&u) = self.real_window.get(x / self.ratio, y / self.ratio) {
-                    *item = u;
-                }
-            })
-    }
-
     pub fn update(&mut self) {
         self.window
-            .update_with_buffer(
-                &self.virtual_window.values,
-                self.virtual_window.width,
-                self.virtual_window.height,
-            )
-            .unwrap();
-    }
-
-    pub fn project_update(&mut self) {
-        self.project();
-        self.update();
-    }
-
-    pub fn is_resized(&self) -> bool {
-        let size = self.window.get_size();
-        if size.0 != self.virtual_window.width || size.1 != self.virtual_window.height {
-            true
-        } else {
-            false
-        }
+            .update_with_buffer(&self.matrix.values, self.matrix.width, self.matrix.height)
+            .unwrap_or_else(|e| panic!("{}", e))
     }
 }
