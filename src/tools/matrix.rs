@@ -1,4 +1,7 @@
+#[cfg(feature = "parallel")]
 use rayon::{iter::*, prelude::*};
+
+/// Matrix is a 2D representation of a vector.
 
 #[derive(Default, Clone)]
 pub struct Matrix<T: Default + Clone + Sync + Send> {
@@ -30,6 +33,7 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
         }
     }
 
+    /// Applies func to given value and sets it back in the Matrix.
     pub fn apply(&mut self, x: usize, y: usize, func: impl Fn(&T) -> T) {
         if let Some(u) = self.get_mut(x, y) {
             *u = func(u);
@@ -38,12 +42,27 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
 
     pub fn enumerate(&self) -> impl ParallelIterator<Item = (usize, usize, &T)> {
         self.values
+            .chunks(self.width)
+            .enumerate()
+            .flat_map(|(y, chunk)| chunk.iter().enumerate().map(move |(x, t)| (x, y, t)))
+    }
+
+    pub fn enumerate_mut(&mut self) -> impl ParallelIterator<Item = (usize, usize, &mut T)> {
+        self.values
+            .chunks_mut(self.width)
+            .enumerate()
+            .flat_map(|(y, chunk)| chunk.iter_mut().enumerate().map(move |(x, t)| (x, y, t)))
+    }
+
+    #[cfg(feature = "parallel")]
+    pub fn par_enumerate(&self) -> impl ParallelIterator<Item = (usize, usize, &T)> {
+        self.values
             .par_chunks(self.width)
             .enumerate()
             .flat_map_iter(|(y, chunk)| chunk.iter().enumerate().map(move |(x, t)| (x, y, t)))
     }
-
-    pub fn enumerate_mut(&mut self) -> impl ParallelIterator<Item = (usize, usize, &mut T)> {
+    #[cfg(feature = "parallel")]
+    pub fn par_enumerate_mut(&mut self) -> impl ParallelIterator<Item = (usize, usize, &mut T)> {
         self.values
             .par_chunks_mut(self.width)
             .enumerate()
