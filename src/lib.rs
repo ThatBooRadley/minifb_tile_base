@@ -4,5 +4,6 @@
 pub mod tools {
     pub mod matrix;
 }
+pub mod entity;
 pub mod tile;
 pub mod window;

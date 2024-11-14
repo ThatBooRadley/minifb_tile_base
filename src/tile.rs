@@ -1,6 +1,7 @@
 use crate::tools::matrix::Matrix;
 
 /// An individual tile
+#[derive(Clone)]
 pub struct Tile(pub Matrix<u32>);
 
 impl Tile {

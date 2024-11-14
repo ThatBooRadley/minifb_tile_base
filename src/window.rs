@@ -1,6 +1,6 @@
 use core::panic;
 
-use crate::tools::matrix::Matrix;
+use crate::{entity::Entity, tools::matrix::Matrix};
 use minifb::{Scale, ScaleMode, Window, WindowOptions};
 
 /// WindowController holds the main interaction between the actual matrix holding the tiles and the
@@ -43,6 +43,23 @@ impl WindowController {
     pub fn update(&mut self) {
         self.window
             .update_with_buffer(&self.matrix.values, self.matrix.width, self.matrix.height)
+            .unwrap_or_else(|e| panic!("{}", e))
+    }
+
+    /// Updates window buffer each frame called and adds entities.
+    pub fn update_with_entities(&mut self, entities: &mut [Entity]) {
+        let mut matrix_with_entities = self.matrix.clone();
+        entities.sort_by(|a, b| a.order.cmp(&b.order));
+        entities
+            .iter()
+            .map(|e| e.to_position_matrix())
+            .for_each(|(x, y, u)| matrix_with_entities.overlay(&u, x, y));
+        self.window
+            .update_with_buffer(
+                &matrix_with_entities.values,
+                self.matrix.width,
+                self.matrix.height,
+            )
             .unwrap_or_else(|e| panic!("{}", e))
     }
 }
