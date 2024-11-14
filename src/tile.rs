@@ -1,8 +1,8 @@
 use crate::tools::matrix::Matrix;
 
+/// An individual tile
 pub struct Tile(pub Matrix<u32>);
 
-/// An individual tile
 impl Tile {
     pub fn new(width: usize, height: usize) -> Self {
         Self(Matrix::new(width, height, false))
