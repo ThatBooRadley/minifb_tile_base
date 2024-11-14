@@ -1,8 +1,5 @@
 use std::fmt::Debug;
 
-#[cfg(feature = "parallel")]
-use rayon::{iter::*, prelude::*};
-
 /// Matrix is a 2D representation of a vector.
 
 #[derive(Default, Clone, Debug)]
