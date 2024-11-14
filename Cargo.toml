@@ -1,6 +1,6 @@
 [package]
 name = "minifb_tile_base"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 exclude = ["main.rs"]
 repository = "https://github.com/ThatBooRadley/minifb_tile_base"
