@@ -14,6 +14,7 @@ pub struct Entity {
 }
 
 impl Entity {
+    /// used for overlay
     pub fn to_position_matrix(&self) -> (usize, usize, &Matrix<u32>) {
         (self.x, self.y, &self.tile.0)
     }
