@@ -57,8 +57,8 @@ impl WindowController {
         self.window
             .update_with_buffer(
                 &matrix_with_entities.values,
-                self.matrix.width,
-                self.matrix.height,
+                matrix_with_entities.width,
+                matrix_with_entities.height,
             )
             .unwrap_or_else(|e| panic!("{}", e))
     }
