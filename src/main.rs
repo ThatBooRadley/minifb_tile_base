@@ -42,12 +42,18 @@ fn main() {
         .for_each(|(x, y, u)| *u = Some((x * y) % 25));
     map.update_buffer(library);
 
+    let mut trans_matrix = Matrix::new(5, 5, false);
+    (0..5).for_each(|i| trans_matrix.set(i, i, Some(0xFFFFFF)));
+
     while window_controller.window.is_open() && !window_controller.window.is_key_down(Key::Escape) {
         if window_controller.window.is_key_down(Key::D) {
             player.x = player.x + 1;
             println!("{}", player.x);
         }
         window_controller.matrix.overlay(&map.buffer, 0, 0);
+        window_controller
+            .matrix
+            .transparent_overlay(&trans_matrix, 2, 2);
         window_controller.update_with_entities(&mut [player.clone()])
     }
 }

@@ -93,6 +93,17 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .for_each(|(t, u)| *t = u.clone())
     }
 
+    /// Overlays matrix only with Some(T) value.
+    pub fn transparent_overlay(&mut self, matrix: &Matrix<Option<T>>, x: usize, y: usize) {
+        self.clamp_mut(x, y, matrix.width, matrix.height)
+            .zip(matrix.values.iter())
+            .for_each(|(t, u)| {
+                if let Some(item) = u {
+                    *t = item.clone();
+                }
+            })
+    }
+
     /// Lists values in matrix with width and height starting at (x, y). Has possibility to return
     /// less values because they're out of bounds.
     pub fn clamp(
