@@ -2,11 +2,49 @@ use crate::tools::matrix::Matrix;
 
 /// An individual tile
 #[derive(Clone)]
-pub struct Tile(pub Matrix<u32>);
+pub enum Tile {
+    Simple(Matrix<u32>),
+    Transparent(Matrix<Option<u32>>),
+}
 
 impl Tile {
-    pub fn new(width: usize, height: usize) -> Self {
-        Self(Matrix::new(width, height, false))
+    pub fn new_simple(width: usize, height: usize) -> Self {
+        Self::Simple(Matrix::new(width, height, false))
+    }
+
+    pub fn new_transparent(width: usize, height: usize) -> Self {
+        Self::Transparent(Matrix::new(width, height, false))
+    }
+
+    pub fn to_simple(&self) -> Self {
+        match self {
+            Self::Transparent(matrix) => Self::Simple(Matrix {
+                values: matrix
+                    .values
+                    .iter()
+                    .map(|u| u.unwrap_or_default())
+                    .collect::<Vec<u32>>(),
+                width: matrix.width,
+                height: matrix.height,
+                wrapping: false,
+            }),
+            _ => self.clone(),
+        }
+    }
+    pub fn to_transparent(&self) -> Self {
+        match self {
+            Self::Simple(matrix) => Self::Transparent(Matrix {
+                values: matrix
+                    .values
+                    .iter()
+                    .map(|&u| Some(u))
+                    .collect::<Vec<Option<u32>>>(),
+                width: matrix.width,
+                height: matrix.height,
+                wrapping: false,
+            }),
+            _ => self.clone(),
+        }
     }
 }
 
@@ -59,8 +97,17 @@ impl TileMap {
         self.map.enumerate().for_each(|(x, y, u)| {
             if let Some(index) = u {
                 if let Some(tile) = tile_library.get(*index) {
-                    self.buffer
-                        .overlay(&tile.0, x * self.tile_width, y * self.tile_height)
+                    match tile {
+                        Tile::Simple(m) => {
+                            self.buffer
+                                .overlay(&m, x * self.tile_width, y * self.tile_height)
+                        }
+                        Tile::Transparent(m) => self.buffer.transparent_overlay(
+                            &m,
+                            x * self.tile_width,
+                            y * self.tile_height,
+                        ),
+                    }
                 }
             }
         })

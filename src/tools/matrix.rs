@@ -149,6 +149,24 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .flat_map(move |chunk| chunk.iter().cycle().skip(x).take(width))
     }
 
+    pub fn clamp_to_matrix(&self,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) -> Self {
+        Self {
+            width: 0,
+            height: 0,
+            values: self.values
+            .chunks(self.width)
+            .skip(y)
+            .take(height)
+            .flat_map(move |chunk| chunk.iter().skip(x).take(width)).cloned().collect::<Vec<_>>(),
+            wrapping: false,
+        }
+    }
+
     /// enumerates then clamps values
     pub fn enumerate_clamp(
         &self,

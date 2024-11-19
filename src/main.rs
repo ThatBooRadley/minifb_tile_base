@@ -23,7 +23,7 @@ fn main() {
     let mut player = Entity {
         x: 25,
         y: 25,
-        tile: Tile(player_icon),
+        tile: Tile::Simple(player_icon),
         order: 0,
     };
 
@@ -33,7 +33,7 @@ fn main() {
         matrix
             .enumerate_mut()
             .for_each(|(x, y, u)| *u = x as u32 * y as u32 * 7 * i);
-        library.add(Tile(matrix));
+        library.add(Tile::Simple(matrix));
     }
 
     let mut map = TileMap::new(25, 25, false, 4, 4);
@@ -48,7 +48,6 @@ fn main() {
     while window_controller.window.is_open() && !window_controller.window.is_key_down(Key::Escape) {
         if window_controller.window.is_key_down(Key::D) {
             player.x = player.x + 1;
-            println!("{}", player.x);
         }
         window_controller.matrix.overlay(&map.buffer, 0, 0);
         window_controller
