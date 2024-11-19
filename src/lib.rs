@@ -3,6 +3,7 @@
 
 pub mod tools {
     pub mod matrix;
+    pub mod timer;
 }
 pub mod entity;
 pub mod tile;
