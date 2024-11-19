@@ -3,7 +3,9 @@ use crate::tools::matrix::Matrix;
 /// An individual tile
 #[derive(Clone)]
 pub enum Tile {
+    /// Every pixel has a value
     Simple(Matrix<u32>),
+    /// Only pixels with Some have a value
     Transparent(Matrix<Option<u32>>),
 }
 
