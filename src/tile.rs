@@ -95,7 +95,7 @@ impl TileMap {
         }
     }
 
-    pub fn update_buffer(&mut self, tile_library: TileLibrary) {
+    pub fn update_buffer(&mut self, tile_library: &TileLibrary) {
         self.map.enumerate().for_each(|(x, y, u)| {
             if let Some(index) = u {
                 if let Some(tile) = tile_library.get(*index) {

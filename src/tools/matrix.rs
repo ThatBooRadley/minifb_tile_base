@@ -149,20 +149,18 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .flat_map(move |chunk| chunk.iter().cycle().skip(x).take(width))
     }
 
-    pub fn clamp_to_matrix(&self,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
-    ) -> Self {
+    pub fn clamp_to_matrix(&self, x: usize, y: usize, width: usize, height: usize) -> Self {
         Self {
             width: 0,
             height: 0,
-            values: self.values
-            .chunks(self.width)
-            .skip(y)
-            .take(height)
-            .flat_map(move |chunk| chunk.iter().skip(x).take(width)).cloned().collect::<Vec<_>>(),
+            values: self
+                .values
+                .chunks(self.width)
+                .skip(y)
+                .take(height)
+                .flat_map(move |chunk| chunk.iter().skip(x).take(width))
+                .cloned()
+                .collect::<Vec<_>>(),
             wrapping: false,
         }
     }
@@ -191,5 +189,68 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
         self.clamp_wrap(x, y, width, height)
             .enumerate()
             .map(move |(i, t)| (x + (i % self.width), y + (i / self.width), t))
+    }
+
+    /// mirrors the matrix vertically (y = 0)
+    pub fn reflect_vertical(&mut self) {
+        self.values = self
+            .values
+            .chunks(self.width)
+            .rev()
+            .flatten()
+            .cloned()
+            .collect::<Vec<T>>()
+    }
+
+    /// mirrors the matrix horizontally (x = 0)
+    pub fn reflect_horizontal(&mut self) {
+        self.values = self
+            .values
+            .chunks(self.width)
+            .map(|c| c.iter().rev())
+            .flatten()
+            .cloned()
+            .collect::<Vec<T>>()
+    }
+
+    /// mirrors the matrix on the y = x axis
+    pub fn reflect_diagonal(&mut self) {
+        let hold = self.clone();
+        self.width = hold.height;
+        self.height = hold.width;
+        self.enumerate_mut().for_each(|(x, y, t)| {
+            if let Some(item) = hold.get(y, x) {
+                *t = item.clone()
+            }
+        })
+    }
+
+    /// mirrors the matrix on the y = -x axis
+    pub fn reflect_negative_diagonal(&mut self) {
+        let hold = self.clone();
+        self.width = hold.height;
+        self.height = hold.width;
+        self.enumerate_mut().for_each(|(x, y, t)| {
+            if let Some(item) = hold.get(hold.height - y, x) {
+                *t = item.clone()
+            }
+        })
+    }
+
+    /// rotates the matrix to the right
+    pub fn rotate_right(&mut self) {
+        self.reflect_diagonal();
+        self.reflect_vertical()
+    }
+
+    /// rotates the matrix to the left
+    pub fn rotate_left(&mut self) {
+        self.reflect_negative_diagonal();
+        self.reflect_vertical()
+    }
+
+    /// rotates the matrix 180 degrees
+    pub fn rotate_180(&mut self) {
+        self.values.reverse()
     }
 }
