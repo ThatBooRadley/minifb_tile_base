@@ -1,6 +1,10 @@
 use core::panic;
 
-use crate::{entity::entity::Entity, tile::Tile, tools::matrix::Matrix};
+use crate::{
+    entity::entity::Entity,
+    tile::Tile,
+    tools::{matrix::Matrix, transform::Transform},
+};
 use minifb::{Scale, ScaleMode, Window, WindowOptions};
 
 /// WindowController holds the main interaction between the actual matrix holding the tiles and the
@@ -52,11 +56,16 @@ impl WindowController {
         entities.sort_by(|a, b| a.get_order().cmp(&b.get_order()));
 
         entities
-            .iter()
-            .map(|e| e.get_position_matrix())
-            .for_each(|(x, y, t)| match t {
-                Tile::Simple(m) => matrix_with_entities.overlay(&m, x, y),
-                Tile::Transparent(m) => matrix_with_entities.transparent_overlay(&m, x, y),
+            .iter_mut()
+            .for_each(|e| match e.get_position_matrix() {
+                (Transform { x, y, rotation }, Tile::Simple(m)) => {
+                    m.rotate(*rotation);
+                    matrix_with_entities.overlay(m, *x, *y)
+                }
+                (Transform { x, y, rotation }, Tile::Transparent(m)) => {
+                    m.rotate(*rotation);
+                    matrix_with_entities.transparent_overlay(m, *x, *y)
+                }
             });
 
         self.window

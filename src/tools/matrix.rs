@@ -1,5 +1,7 @@
 use std::fmt::Debug;
 
+use super::transform::Rotation;
+
 /// Matrix is a 2D representation of a vector.
 
 #[derive(Default, Clone, Debug)]
@@ -193,64 +195,140 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
 
     /// mirrors the matrix vertically (y = 0)
     pub fn reflect_vertical(&mut self) {
-        self.values = self
-            .values
-            .chunks(self.width)
-            .rev()
-            .flatten()
-            .cloned()
-            .collect::<Vec<T>>()
+        self.values = self.iter_reflect_vertical().cloned().collect::<Vec<_>>();
+    }
+
+    /// returns an iterator of vertically reflected matrix
+    pub fn iter_reflect_vertical(&self) -> impl Iterator<Item = &T> {
+        self.values.chunks(self.width).rev().flatten()
+    }
+
+    /// returns a mutible iterator of vertically reflected matrix
+    pub fn iter_reflect_vertical_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.values.chunks_mut(self.width).rev().flatten()
     }
 
     /// mirrors the matrix horizontally (x = 0)
     pub fn reflect_horizontal(&mut self) {
-        self.values = self
-            .values
+        self.values = self.iter_reflect_horizontal().cloned().collect::<Vec<_>>()
+    }
+
+    /// returns an iterator of horizontally reflected matrix
+    pub fn iter_reflect_horizontal(&self) -> impl Iterator<Item = &T> {
+        self.values
             .chunks(self.width)
             .map(|c| c.iter().rev())
             .flatten()
-            .cloned()
-            .collect::<Vec<T>>()
+    }
+
+    /// returns a mutible iterator of horizontally reflected matrix
+    pub fn iter_reflect_horizontal_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.values
+            .chunks_mut(self.width)
+            .map(|c| c.iter_mut().rev())
+            .flatten()
     }
 
     /// mirrors the matrix on the y = x axis
     pub fn reflect_diagonal(&mut self) {
-        let hold = self.clone();
-        self.width = hold.height;
-        self.height = hold.width;
-        self.enumerate_mut().for_each(|(x, y, t)| {
-            if let Some(item) = hold.get(y, x) {
-                *t = item.clone()
-            }
+        self.values = self.iter_reflect_diagonal().cloned().collect::<Vec<_>>();
+        let hold = self.width;
+        self.width = self.height;
+        self.height = hold
+    }
+
+    /// returns an iterator of diagonally reflected matrix
+    pub fn iter_reflect_diagonal(&self) -> impl Iterator<Item = &T> {
+        (0..self.width).flat_map(move |i| {
+            self.values
+                .chunks(self.width)
+                .flat_map(move |c| c.iter().skip(i).take(1))
         })
     }
 
     /// mirrors the matrix on the y = -x axis
     pub fn reflect_negative_diagonal(&mut self) {
-        let hold = self.clone();
-        self.width = hold.height;
-        self.height = hold.width;
-        self.enumerate_mut().for_each(|(x, y, t)| {
-            if let Some(item) = hold.get(hold.height - y, x) {
-                *t = item.clone()
-            }
+        self.values = self
+            .iter_reflect_negative_diagonal()
+            .cloned()
+            .collect::<Vec<_>>();
+        let hold = self.width;
+        self.width = self.height;
+        self.height = hold
+    }
+
+    /// returns an iterator of negative diagonally reflected matrix
+    pub fn iter_reflect_negative_diagonal(&self) -> impl Iterator<Item = &T> {
+        (self.width..0).flat_map(move |i| {
+            self.values
+                .chunks(self.width)
+                .rev()
+                .flat_map(move |c| c.iter().skip(i).take(1))
         })
     }
 
     /// rotates the matrix to the right
     pub fn rotate_right(&mut self) {
-        self.reflect_diagonal();
-        self.reflect_vertical()
+        self.values = self.iter_rotate_right().cloned().collect::<Vec<_>>();
+        let hold = self.width;
+        self.width = self.height;
+        self.height = hold
+    }
+
+    /// returns an iterator of right rotated matrix
+    pub fn iter_rotate_right(&self) -> impl Iterator<Item = &T> {
+        (0..self.width).flat_map(move |i| {
+            self.values
+                .chunks(self.width)
+                .rev()
+                .flat_map(move |c| c.iter().skip(i).take(1))
+        })
     }
 
     /// rotates the matrix to the left
     pub fn rotate_left(&mut self) {
-        self.reflect_negative_diagonal();
-        self.reflect_vertical()
+        self.values = self.iter_rotate_left().cloned().collect::<Vec<_>>();
+        let hold = self.width;
+        self.width = self.height;
+        self.height = hold
+    }
+
+    /// returns an iterator of left rotated matrix
+    pub fn iter_rotate_left(&self) -> impl Iterator<Item = &T> {
+        (self.width..0).flat_map(move |i| {
+            self.values
+                .chunks(self.width)
+                .flat_map(move |c| c.iter().skip(i).take(1))
+        })
     }
 
     /// rotates the matrix 180 degrees
     pub fn rotate_180(&mut self) {
         self.values.reverse()
+    }
+
+    /// returns an iterator of 180 degree rotated matrix
+    pub fn iter_rotate_180(&self) -> impl Iterator<Item = &T> {
+        self.values.iter().rev()
+    }
+
+    /// rotates the matrix according to rotation direction given
+    pub fn rotate(&mut self, rotation: Rotation) {
+        match rotation {
+            Rotation::DOWN => self.rotate_180(),
+            Rotation::LEFT => self.rotate_left(),
+            Rotation::RIGHT => self.rotate_right(),
+            _ => (),
+        }
+    }
+
+    /// returns an iterator of matrix rotated according to given rotation direction
+    pub fn iter_rotate(&self, rotation: Rotation) -> Box<dyn Iterator<Item = &T> + '_> {
+        match rotation {
+            Rotation::DOWN => Box::new(self.iter_rotate_180()),
+            Rotation::LEFT => Box::new(self.iter_rotate_left()),
+            Rotation::RIGHT => Box::new(self.iter_rotate_right()),
+            _ => Box::new(self.values.iter()),
+        }
     }
 }

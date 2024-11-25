@@ -19,8 +19,8 @@ impl Entity for Player {
     fn get_order(&self) -> &usize {
         &0
     }
-    fn get_position_matrix(&self) -> (usize, usize, &Tile) {
-        (self.transform.x, self.transform.y, &self.tile)
+    fn get_position_matrix(&self) -> (&Transform, &Tile) {
+        (&self.transform, &self.tile)
     }
 }
 

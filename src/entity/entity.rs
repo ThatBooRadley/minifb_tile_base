@@ -1,6 +1,6 @@
-use crate::tile::Tile;
+use crate::{tile::Tile, tools::transform::Transform};
 
 pub trait Entity {
-    fn get_position_matrix(&self) -> (usize, usize, &Tile);
+    fn get_position_matrix(&mut self) -> (&Transform, &Tile);
     fn get_order(&self) -> &usize;
 }
