@@ -330,10 +330,10 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
 
     /// returns an iterator of left rotated matrix
     pub fn iter_rotate_left(&self) -> impl Iterator<Item = &T> {
-        (self.width..0).flat_map(move |i| {
+        (0..self.width).flat_map(move |i| {
             self.values
                 .chunks(self.width)
-                .flat_map(move |c| c.iter().skip(i).take(1))
+                .flat_map(move |c| c.iter().rev().skip(i).take(1))
         })
     }
 
