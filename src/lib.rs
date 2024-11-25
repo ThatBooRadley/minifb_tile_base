@@ -4,7 +4,11 @@
 pub mod tools {
     pub mod matrix;
     pub mod timer;
+    pub mod transform;
 }
-pub mod entity;
+pub mod entity {
+    pub mod animation;
+    pub mod entity;
+}
 pub mod tile;
 pub mod window;
