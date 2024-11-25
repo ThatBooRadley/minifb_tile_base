@@ -2,7 +2,10 @@ use minifb::{Key, Scale};
 use minifb_tile_base::{
     entity::entity::Entity,
     tile::{Tile, TileLibrary, TileMap},
-    tools::{matrix::Matrix, transform::Transform},
+    tools::{
+        matrix::Matrix,
+        transform::{Rotation, Transform},
+    },
     window::WindowController,
 };
 
@@ -30,10 +33,27 @@ fn main() {
 
     let mut player = Player {
         transform: Transform::default(),
-        tile: Tile::Simple(Matrix {
+        tile: Tile::Transparent(Matrix {
             width: 4,
             height: 4,
-            values: vec![0xFFFFFF; 16],
+            values: vec![
+                None,
+                Some(0xFF0000),
+                Some(0xFF0000),
+                None,
+                Some(0xFFFFFF),
+                Some(0xFF0000),
+                Some(0xFF0000),
+                Some(0xFFFFFF),
+                Some(0xFF0000),
+                Some(0xFF0000),
+                Some(0xFF0000),
+                Some(0xFF0000),
+                None,
+                Some(0xFF0000),
+                Some(0xFF0000),
+                None,
+            ],
             wrapping: false,
         }),
     };
@@ -62,10 +82,22 @@ fn main() {
             .get_keys()
             .iter()
             .for_each(|k| match k {
-                Key::W => player.transform.y -= 1,
-                Key::A => player.transform.x -= 1,
-                Key::S => player.transform.y += 1,
-                Key::D => player.transform.x += 1,
+                Key::W => {
+                    player.transform.y -= 1;
+                    player.transform.rotation = Rotation::UP
+                }
+                Key::A => {
+                    player.transform.x -= 1;
+                    player.transform.rotation = Rotation::LEFT
+                }
+                Key::S => {
+                    player.transform.y += 1;
+                    player.transform.rotation = Rotation::DOWN
+                }
+                Key::D => {
+                    player.transform.x += 1;
+                    player.transform.rotation = Rotation::RIGHT
+                }
                 _ => (),
             });
 

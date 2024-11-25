@@ -95,6 +95,22 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .for_each(|(t, u)| *t = u.clone())
     }
 
+    /// Overlays iterator onto matrix starting at position (x, y).
+    pub fn overlay_iter<'a>(
+        &mut self,
+        iter: impl Iterator<Item = &'a T>,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) where
+        T: 'a,
+    {
+        self.clamp_mut(x, y, width, height)
+            .zip(iter)
+            .for_each(|(t, u)| *t = u.clone())
+    }
+
     /// Overlays matrix only with Some(T) value.
     pub fn transparent_overlay(&mut self, matrix: &Matrix<Option<T>>, x: usize, y: usize) {
         self.clamp_mut(x, y, matrix.width, matrix.height)
@@ -102,6 +118,25 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .for_each(|(t, u)| {
                 if let Some(item) = u {
                     *t = item.clone();
+                }
+            })
+    }
+
+    pub fn transparent_overlay_iter<'a>(
+        &mut self,
+        iter: impl Iterator<Item = &'a Option<T>>,
+        x: usize,
+        y: usize,
+        width: usize,
+        height: usize,
+    ) where
+        T: 'a,
+    {
+        self.clamp_mut(x, y, width, height)
+            .zip(iter)
+            .for_each(|(t, u)| {
+                if let Some(item) = u {
+                    *t = item.clone()
                 }
             })
     }

@@ -58,14 +58,10 @@ impl WindowController {
         entities
             .iter_mut()
             .for_each(|e| match e.get_position_matrix() {
-                (Transform { x, y, rotation }, Tile::Simple(m)) => {
-                    m.rotate(*rotation);
-                    matrix_with_entities.overlay(m, *x, *y)
-                }
-                (Transform { x, y, rotation }, Tile::Transparent(m)) => {
-                    m.rotate(*rotation);
-                    matrix_with_entities.transparent_overlay(m, *x, *y)
-                }
+                (Transform { x, y, rotation }, Tile::Simple(m)) => matrix_with_entities
+                    .overlay_iter(m.iter_rotate(*rotation), *x, *y, m.width, m.height),
+                (Transform { x, y, rotation }, Tile::Transparent(m)) => matrix_with_entities
+                    .transparent_overlay_iter(m.iter_rotate(*rotation), *x, *y, m.width, m.height),
             });
 
         self.window
