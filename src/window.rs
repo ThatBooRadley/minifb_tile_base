@@ -49,7 +49,7 @@ impl WindowController {
     /// Updates window buffer each frame called and adds entities.
     pub fn update_with_entities(&mut self, entities: &mut [Entity]) {
         let mut matrix_with_entities = self.matrix.clone();
-        entities.sort_by(|a, b| a.order.cmp(&b.order));
+        entities.sort_by(|a, b| a.get_order().cmp(&b.get_order()));
 
         entities
             .iter()

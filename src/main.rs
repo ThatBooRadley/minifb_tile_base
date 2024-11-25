@@ -1,6 +1,8 @@
+use std::time::Duration;
+
 use minifb::{Key, Scale};
 use minifb_tile_base::{
-    entity::Entity,
+    entity::{AnimationPlayer, AnimationReel, Entity},
     tile::{Tile, TileLibrary, TileMap},
     tools::matrix::Matrix,
     window::WindowController,
@@ -13,19 +15,20 @@ fn main() {
     let mut window_controller = WindowController::new("title", WIDTH, HEIGHT, Scale::X4, true);
     window_controller.matrix.values.fill(500);
 
-    let player_icon = Matrix {
+    let player_icon = Tile::Simple(Matrix {
         width: 4,
         height: 4,
         values: vec![0xFFFFFF; 16],
         wrapping: false,
-    };
+    });
 
-    let mut player = Entity {
-        x: 25,
-        y: 25,
-        tile: Tile::Simple(player_icon),
-        order: 0,
-    };
+    let indices = [(0, Duration::from_millis(500))];
+    let animation_reel = AnimationReel::new(&indices);
+    let mut reels = [animation_reel];
+    let frames = [&player_icon];
+    let animation_player = AnimationPlayer::new(&frames, &mut reels);
+
+    let mut player = Entity::new_animated(25, 25, &animation_player, 0);
 
     let mut library = TileLibrary::new();
     for i in 0..25 {
@@ -51,10 +54,10 @@ fn main() {
             .get_keys()
             .iter()
             .for_each(|k| match k {
-                Key::W => player.y -= 1,
-                Key::A => player.x -= 1,
-                Key::S => player.y += 1,
-                Key::D => player.x += 1,
+                Key::W => *player.get_y_mut() -= 1,
+                Key::A => *player.get_x_mut() -= 1,
+                Key::S => *player.get_y_mut() += 1,
+                Key::D => *player.get_x_mut() += 1,
                 _ => (),
             });
 
