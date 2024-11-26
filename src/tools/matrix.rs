@@ -366,4 +366,31 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             _ => Box::new(self.values.iter()),
         }
     }
+
+    ///returns a matrix that is subdivided into given number of matrices
+    pub fn subdivide_matrix(
+        &self,
+        horizontal_subdivisions: usize,
+        vertical_subdivisions: usize,
+    ) -> Matrix<Matrix<T>> {
+        let horizontal_length = self.width / horizontal_subdivisions;
+        let vertical_length = self.height / vertical_subdivisions;
+        Matrix::<Matrix<T>> {
+            values: (0..vertical_subdivisions)
+                .flat_map(|y| {
+                    (0..horizontal_subdivisions).map(move |x| {
+                        self.clamp_to_matrix(
+                            x * horizontal_length,
+                            y * vertical_length,
+                            horizontal_length,
+                            vertical_length,
+                        )
+                    })
+                })
+                .collect::<Vec<_>>(),
+            width: horizontal_subdivisions,
+            height: vertical_subdivisions,
+            wrapping: self.wrapping,
+        }
+    }
 }

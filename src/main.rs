@@ -63,7 +63,7 @@ fn main() {
         let mut matrix = Matrix::new(4, 4, false);
         matrix
             .enumerate_mut()
-            .for_each(|(x, y, u)| *u = x as u32 * y as u32 * 7 * i);
+            .for_each(|(x, y, u)| *u = (x + 1) as u32 * (y + 1) as u32 * 7 * i);
         library.add(Tile::Simple(matrix));
     }
 
@@ -75,6 +75,15 @@ fn main() {
 
     let mut trans_matrix = Matrix::new(5, 5, false);
     (0..5).for_each(|i| trans_matrix.set(i, i, Some(0xFFFFFF)));
+
+    let matrix = Matrix {
+        values: (0..16).collect::<Vec<_>>(),
+        width: 4,
+        height: 4,
+        wrapping: false,
+    };
+    println!("{:?}", matrix);
+    println!("{:?}", matrix.subdivide_matrix(3, 3));
 
     while window_controller.window.is_open() && !window_controller.window.is_key_down(Key::Escape) {
         window_controller
