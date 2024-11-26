@@ -375,7 +375,7 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     ) -> Matrix<Matrix<T>> {
         let horizontal_length = self.width / horizontal_subdivisions;
         let vertical_length = self.height / vertical_subdivisions;
-        Matrix::<Matrix<T>> {
+        Matrix {
             values: (0..vertical_subdivisions)
                 .flat_map(|y| {
                     (0..horizontal_subdivisions).map(move |x| {
