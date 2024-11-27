@@ -372,7 +372,7 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
         &self,
         horizontal_subdivisions: usize,
         vertical_subdivisions: usize,
-    ) -> Matrix<Matrix<T>> {
+    ) -> Matrix<Self> {
         let horizontal_length = self.width / horizontal_subdivisions;
         let vertical_length = self.height / vertical_subdivisions;
         Matrix {
