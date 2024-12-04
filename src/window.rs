@@ -2,7 +2,7 @@ use core::panic;
 
 use crate::{
     entity::entity::Entity,
-    tile::Tile,
+    graphics::{pixel::Pixel, tile::Tile},
     tools::{matrix::Matrix, transform::Transform},
 };
 use minifb::{Scale, ScaleMode, Window, WindowOptions};
@@ -51,18 +51,27 @@ impl WindowController {
     }
 
     /// Updates window buffer each frame called and adds entities.
-    pub fn update_with_entities<T: Entity>(&mut self, entities: &mut [T]) {
+    pub fn update_with_entities(&mut self, entities: &mut [impl Entity]) {
         let mut matrix_with_entities = self.matrix.clone();
         entities.sort_by(|a, b| a.get_order().cmp(&b.get_order()));
 
-        entities
-            .iter_mut()
-            .for_each(|e| match e.get_position_matrix() {
-                (Transform { x, y, rotation }, Tile::Simple(m)) => matrix_with_entities
-                    .overlay_iter(m.iter_rotate(*rotation), *x, *y, m.width, m.height),
-                (Transform { x, y, rotation }, Tile::Transparent(m)) => matrix_with_entities
-                    .transparent_overlay_iter(m.iter_rotate(*rotation), *x, *y, m.width, m.height),
-            });
+        entities.iter_mut().for_each(|e| {
+            let (Transform { x, y, rotation }, tile) = e.get_position_matrix();
+            let tile_matrix = tile.get_matrix();
+            matrix_with_entities.transparent_overlay_iter(
+                tile_matrix.iter_rotate(*rotation).map(|p| {
+                    if let Pixel::Color(u) = p {
+                        Some(*u)
+                    } else {
+                        None
+                    }
+                }),
+                *x,
+                *y,
+                tile_matrix.width,
+                tile_matrix.height,
+            )
+        });
 
         self.window
             .update_with_buffer(

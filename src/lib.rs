@@ -10,5 +10,11 @@ pub mod entity {
     pub mod animation;
     pub mod entity;
 }
-pub mod tile;
+pub mod graphics {
+    pub mod color;
+    pub mod library;
+    pub mod map;
+    pub mod pixel;
+    pub mod tile;
+}
 pub mod window;

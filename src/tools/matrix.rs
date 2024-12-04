@@ -5,7 +5,7 @@ use super::transform::Rotation;
 /// Matrix is a 2D representation of a vector.
 
 #[derive(Default, Clone, Debug)]
-pub struct Matrix<T: Default + Clone + Sync + Send> {
+pub struct Matrix<T: Default + Clone> {
     pub values: Vec<T>,
     pub width: usize,
     pub height: usize,
@@ -124,7 +124,7 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
 
     pub fn transparent_overlay_iter<'a>(
         &mut self,
-        iter: impl Iterator<Item = &'a Option<T>>,
+        iter: impl Iterator<Item = Option<T>>,
         x: usize,
         y: usize,
         width: usize,

@@ -1,7 +1,7 @@
 use minifb::{Key, Scale};
 use minifb_tile_base::{
     entity::entity::Entity,
-    tile::{Tile, TileLibrary, TileMap},
+    graphics::{map::TileMap, pixel::Pixel, tile::Tile},
     tools::{
         matrix::Matrix,
         transform::{Rotation, Transform},
@@ -15,15 +15,58 @@ const HEIGHT: usize = 100;
 #[derive(Clone)]
 struct Player {
     transform: Transform,
-    tile: Tile,
+    matrix: Matrix<Pixel>,
+}
+
+impl Tile for Player {
+    fn get_iter(&self) -> impl Iterator<Item = &Pixel> {
+        self.matrix.values.iter()
+    }
+
+    fn get_matrix(&self) -> &Matrix<Pixel> {
+        &self.matrix
+    }
 }
 
 impl Entity for Player {
     fn get_order(&self) -> &usize {
         &0
     }
-    fn get_position_matrix(&self) -> (&Transform, &Tile) {
-        (&self.transform, &self.tile)
+    fn get_position_matrix(&self) -> (&Transform, &impl Tile) {
+        (&self.transform, self)
+    }
+}
+
+#[derive(Clone)]
+enum TileBase {
+    ONE(Matrix<Pixel>),
+    TWO(Matrix<Pixel>),
+    THREE(Matrix<Pixel>),
+    FOUR(Matrix<Pixel>),
+    FIVE(Matrix<Pixel>),
+}
+
+impl TileBase {
+    fn from_usize(i: usize, matrix: Matrix<Pixel>) -> Self {
+        match i % 5 {
+            0 => Self::ONE(matrix),
+            1 => Self::TWO(matrix),
+            2 => Self::THREE(matrix),
+            3 => Self::FOUR(matrix),
+            _ => Self::FIVE(matrix),
+        }
+    }
+}
+
+impl Tile for TileBase {
+    fn get_iter(&self) -> impl Iterator<Item = &Pixel> {
+        self.get_matrix().values.iter()
+    }
+
+    fn get_matrix(&self) -> &Matrix<Pixel> {
+        match self {
+            Self::ONE(m) | Self::TWO(m) | Self::THREE(m) | Self::FOUR(m) | Self::FIVE(m) => m,
+        }
     }
 }
 
@@ -33,57 +76,109 @@ fn main() {
 
     let mut player = Player {
         transform: Transform::default(),
-        tile: Tile::Transparent(Matrix {
+        matrix: Matrix {
             width: 4,
             height: 4,
             values: vec![
-                None,
-                Some(0xFF0000),
-                Some(0xFF0000),
-                None,
-                Some(0xFFFFFF),
-                Some(0xFF0000),
-                Some(0xFF0000),
-                Some(0xFFFFFF),
-                Some(0xFF0000),
-                Some(0xFF0000),
-                Some(0xFF0000),
-                Some(0xFF0000),
-                None,
-                Some(0xFF0000),
-                Some(0xFF0000),
-                None,
+                Pixel::None,
+                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFF0000),
+                Pixel::None,
+                Pixel::Color(0xFFFFFF),
+                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFFFFFF),
+                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFF0000),
+                Pixel::None,
+                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFF0000),
+                Pixel::None,
             ],
             wrapping: false,
-        }),
+        },
     };
-
-    let mut library = TileLibrary::new();
-    for i in 0..25 {
-        let mut matrix = Matrix::new(4, 4, false);
-        matrix
-            .enumerate_mut()
-            .for_each(|(x, y, u)| *u = (x + 1) as u32 * (y + 1) as u32 * 7 * i);
-        library.add(Tile::Simple(matrix));
-    }
 
     let mut map = TileMap::new(25, 25, false, 4, 4);
-    map.map
-        .enumerate_mut()
-        .for_each(|(x, y, u)| *u = Some((x * y) % 25));
-    map.update_buffer(&library);
+    map.map.enumerate_mut().for_each(|(x, y, u)| {
+        *u = Some(match (x * y) % 5 {
+            0 => TileBase::from_usize(
+                0,
+                Matrix {
+                    values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                        .iter()
+                        .map(|u| Pixel::Value(*u))
+                        .collect::<Vec<_>>(),
+                    width: 4,
+                    height: 4,
+                    wrapping: false,
+                },
+            ),
+            1 => TileBase::from_usize(
+                1,
+                Matrix {
+                    values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                        .iter()
+                        .rev()
+                        .map(|u| Pixel::Value(*u))
+                        .collect::<Vec<_>>(),
 
-    let mut trans_matrix = Matrix::new(5, 5, false);
-    (0..5).for_each(|i| trans_matrix.set(i, i, Some(0xFFFFFF)));
+                    width: 4,
+                    height: 4,
+                    wrapping: false,
+                },
+            ),
+            2 => TileBase::from_usize(
+                2,
+                Matrix {
+                    values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
+                        .iter()
+                        .map(|u| Pixel::Value(*u))
+                        .collect::<Vec<_>>(),
 
-    let matrix = Matrix {
-        values: (0..16).collect::<Vec<_>>(),
-        width: 4,
-        height: 4,
-        wrapping: false,
-    };
-    println!("{:?}", matrix);
-    println!("{:?}", matrix.subdivide_matrix(3, 3));
+                    width: 4,
+                    height: 4,
+                    wrapping: false,
+                },
+            ),
+            3 => TileBase::from_usize(
+                3,
+                Matrix {
+                    values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
+                        .iter()
+                        .rev()
+                        .map(|u| Pixel::Value(*u))
+                        .collect::<Vec<_>>(),
+
+                    width: 4,
+                    height: 4,
+                    wrapping: false,
+                },
+            ),
+            _ => TileBase::from_usize(
+                4,
+                Matrix {
+                    values: [3, 1, 2, 0, 7, 5, 6, 4, 11, 9, 10, 8, 15, 13, 14, 12]
+                        .iter()
+                        .map(|u| Pixel::Value(*u))
+                        .collect::<Vec<_>>(),
+
+                    width: 4,
+                    height: 4,
+                    wrapping: false,
+                },
+            ),
+        })
+    });
+
+    (0..16).for_each(|i| {
+        map.palatte.add(i, 0xF << i);
+        println!("None {}, {:?}", i, map.palatte.get(i))
+    });
+
+    map.update_buffer();
 
     while window_controller.window.is_open() && !window_controller.window.is_key_down(Key::Escape) {
         window_controller
@@ -111,9 +206,6 @@ fn main() {
             });
 
         window_controller.matrix.overlay(&map.buffer, 0, 0);
-        window_controller
-            .matrix
-            .transparent_overlay(&trans_matrix, 2, 2);
         window_controller.update_with_entities(&mut [player.clone()])
     }
 }

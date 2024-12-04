@@ -1,11 +1,11 @@
 use std::{iter::Cycle, slice::Iter, time::Duration};
 
-use crate::{tile::Tile, tools::timer::Timer};
+use crate::{graphics::tile::Tile, tools::timer::Timer};
 
 /// Works with Entity to allow animations
-pub struct AnimationPlayer<'a> {
+pub struct AnimationPlayer<'a, T: Tile> {
     /// list of all Tiles to be used in animations
-    pub frames: &'a [&'a Tile],
+    pub frames: &'a [T],
     /// timer to determine when frame should change
     pub timer: Timer,
     /// frame indices with their duration in the order they are to be displayed
@@ -14,8 +14,8 @@ pub struct AnimationPlayer<'a> {
     pub index: usize,
 }
 
-impl<'a> AnimationPlayer<'a> {
-    pub fn new(frames: &'a [&'a Tile], reels: &'a mut [AnimationReel<'a>]) -> Self {
+impl<'a, T: Tile> AnimationPlayer<'a, T> {
+    pub fn new(frames: &'a [T], reels: &'a mut [AnimationReel<'a>]) -> Self {
         Self {
             frames,
             timer: Timer::new(Duration::ZERO),
@@ -31,7 +31,7 @@ impl<'a> AnimationPlayer<'a> {
     }
 
     /// gets current frame (tile)
-    pub fn get_frame(&self) -> &Tile {
+    pub fn get_frame(&self) -> &T {
         self.frames.get(self.get_reel().index).unwrap()
     }
 
