@@ -3,14 +3,17 @@ use minifb_tile_base::{
     entity::entity::Entity,
     graphics::{map::TileMap, pixel::Pixel, tile::Tile},
     tools::{
+        dual_trait::Algebra,
         matrix::Matrix,
-        transform::{Rotation, Transform},
+        transform::{Position, Rotation, Size, Transform},
     },
     window::WindowController,
 };
 
-const WIDTH: usize = 100;
-const HEIGHT: usize = 100;
+const SIZE: Size = Size {
+    width: 100,
+    height: 100,
+};
 
 #[derive(Clone)]
 struct Player {
@@ -71,14 +74,13 @@ impl Tile for TileBase {
 }
 
 fn main() {
-    let mut window_controller = WindowController::new("title", WIDTH, HEIGHT, Scale::X4, true);
+    let mut window_controller = WindowController::new("title", SIZE, Scale::X4, true);
     window_controller.matrix.values.fill(500);
 
     let mut player = Player {
         transform: Transform::default(),
         matrix: Matrix {
-            width: 4,
-            height: 4,
+            size: Size::splat(4),
             values: vec![
                 Pixel::None,
                 Pixel::Color(0xFF0000),
@@ -101,9 +103,9 @@ fn main() {
         },
     };
 
-    let mut map = TileMap::new(25, 25, false, 4, 4);
-    map.map.enumerate_mut().for_each(|(x, y, u)| {
-        *u = Some(match (x * y) % 5 {
+    let mut map = TileMap::new(Size::splat(25), false, Size::splat(4));
+    map.map.enumerate_mut().for_each(|(position, u)| {
+        *u = Some(match position.mul_self() % 5 {
             0 => TileBase::from_usize(
                 0,
                 Matrix {
@@ -111,8 +113,7 @@ fn main() {
                         .iter()
                         .map(|u| Pixel::Value(*u))
                         .collect::<Vec<_>>(),
-                    width: 4,
-                    height: 4,
+                    size: Size::splat(4),
                     wrapping: false,
                 },
             ),
@@ -125,8 +126,7 @@ fn main() {
                         .map(|u| Pixel::Value(*u))
                         .collect::<Vec<_>>(),
 
-                    width: 4,
-                    height: 4,
+                    size: Size::splat(4),
                     wrapping: false,
                 },
             ),
@@ -138,8 +138,7 @@ fn main() {
                         .map(|u| Pixel::Value(*u))
                         .collect::<Vec<_>>(),
 
-                    width: 4,
-                    height: 4,
+                    size: Size::splat(4),
                     wrapping: false,
                 },
             ),
@@ -152,8 +151,7 @@ fn main() {
                         .map(|u| Pixel::Value(*u))
                         .collect::<Vec<_>>(),
 
-                    width: 4,
-                    height: 4,
+                    size: Size::splat(4),
                     wrapping: false,
                 },
             ),
@@ -165,8 +163,7 @@ fn main() {
                         .map(|u| Pixel::Value(*u))
                         .collect::<Vec<_>>(),
 
-                    width: 4,
-                    height: 4,
+                    size: Size::splat(4),
                     wrapping: false,
                 },
             ),
@@ -187,25 +184,27 @@ fn main() {
             .iter()
             .for_each(|k| match k {
                 Key::W => {
-                    player.transform.y -= 1;
+                    player.transform.position.y -= 1;
                     player.transform.rotation = Rotation::UP
                 }
                 Key::A => {
-                    player.transform.x -= 1;
+                    player.transform.position.x -= 1;
                     player.transform.rotation = Rotation::LEFT
                 }
                 Key::S => {
-                    player.transform.y += 1;
+                    player.transform.position.y += 1;
                     player.transform.rotation = Rotation::DOWN
                 }
                 Key::D => {
-                    player.transform.x += 1;
+                    player.transform.position.x += 1;
                     player.transform.rotation = Rotation::RIGHT
                 }
                 _ => (),
             });
 
-        window_controller.matrix.overlay(&map.buffer, 0, 0);
+        window_controller
+            .matrix
+            .overlay(&map.buffer, Position::splat(0));
         window_controller.update_with_entities(&mut [player.clone()])
     }
 }

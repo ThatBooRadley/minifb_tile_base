@@ -14,10 +14,15 @@ pub trait Algebra: Sized + Debug {
         + DivAssign
         + Rem<Output = Self::Item>
         + RemAssign
-        + Eq;
+        + Eq
+        + Clone;
     fn new(first: Self::Item, last: Self::Item) -> Self;
     fn first(&self) -> Self::Item;
     fn last(&self) -> Self::Item;
+
+    fn splat(value: Self::Item) -> Self {
+        Self::new(value.clone(), value)
+    }
 
     fn add(&self, rhs: Self) -> Self {
         Self::new(self.first() + rhs.first(), self.last() + rhs.last())
@@ -73,5 +78,13 @@ pub trait Algebra: Sized + Debug {
 
     fn into_dual<T: Algebra<Item = Self::Item>>(&self) -> T {
         T::new(self.first(), self.last())
+    }
+
+    fn add_self(&self) -> Self::Item {
+        self.first() + self.last()
+    }
+
+    fn mul_self(&self) -> Self::Item {
+        self.first() * self.last()
     }
 }

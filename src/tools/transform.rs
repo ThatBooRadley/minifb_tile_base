@@ -64,7 +64,7 @@ impl Algebra for Size {
 
 impl Size {
     pub fn area(&self) -> usize {
-        self.width * self.height
+        self.mul_self()
     }
 
     pub fn swap(&mut self) {
