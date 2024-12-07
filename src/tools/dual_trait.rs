@@ -3,6 +3,7 @@ use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign},
 };
 
+/// trait for structs with 2 fields
 pub trait Algebra: Sized + Debug {
     type Item: Add<Output = Self::Item>
         + AddAssign

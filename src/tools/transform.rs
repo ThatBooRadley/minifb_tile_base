@@ -35,6 +35,10 @@ impl Algebra for Position {
     fn last(&self) -> Self::Item {
         self.y
     }
+
+    fn splat(value: Self::Item) -> Self {
+        Self { x: value, y: value }
+    }
 }
 
 #[derive(Clone, Copy, Default, Debug)]
@@ -59,6 +63,13 @@ impl Algebra for Size {
 
     fn last(&self) -> Self::Item {
         self.height
+    }
+
+    fn splat(value: Self::Item) -> Self {
+        Self {
+            width: value,
+            height: value,
+        }
     }
 }
 
