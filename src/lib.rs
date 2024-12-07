@@ -2,6 +2,7 @@
 //! Mainly, this is for personal use so I will update this semi-infrequently.
 
 pub mod tools {
+    pub mod dual_trait;
     pub mod matrix;
     pub mod timer;
     pub mod transform;

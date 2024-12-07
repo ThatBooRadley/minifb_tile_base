@@ -1,3 +1,7 @@
+use std::ops::{Add, AddAssign};
+
+use super::dual_trait::Algebra;
+
 #[derive(Clone, Copy, Default)]
 pub struct Transform {
     pub x: usize,
@@ -12,4 +16,9 @@ pub enum Rotation {
     DOWN,
     LEFT,
     RIGHT,
+}
+
+pub struct Position {
+    pub x: usize,
+    pub y: usize,
 }
