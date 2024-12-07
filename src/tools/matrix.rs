@@ -1,46 +1,51 @@
 use std::fmt::Debug;
 
-use super::transform::Rotation;
+use super::{
+    dual_trait::Algebra,
+    transform::{Position, Rotation, Size},
+};
 
 /// Matrix is a 2D representation of a vector.
 
 #[derive(Default, Clone, Debug)]
 pub struct Matrix<T: Default + Clone> {
     pub values: Vec<T>,
-    pub width: usize,
-    pub height: usize,
+    pub size: Size,
     /// if true, values outside bounds will wrap
     pub wrapping: bool,
 }
 
 impl<T: Default + Clone + Sync + Send> Matrix<T> {
-    pub fn new(width: usize, height: usize, wrapping: bool) -> Self {
+    pub fn new(size: Size, wrapping: bool) -> Self {
         Self {
-            values: vec![T::default(); width * height],
-            width,
-            height,
+            values: vec![T::default(); size.area()],
+            size,
             wrapping,
         }
     }
 
-    fn some_bound(&self, x: usize, y: usize) -> Option<usize> {
-        match (self.width, self.height, self.wrapping) {
-            (w, h, true) => Some((x % w) + ((y % h) * w)),
-            (w, h, false) if w > x && h > y => Some(x + (y * w)),
+    fn some_bound(&self, position: Position) -> Option<usize> {
+        match (position, self.size, self.wrapping) {
+            (Position { x, y }, Size { width, height }, true) => {
+                Some((x % width) + ((y % height) * width))
+            }
+            (Position { x, y }, Size { width, height }, false) if width > x && height > y => {
+                Some(x + (y * width))
+            }
             _ => None,
         }
     }
 
-    pub fn get(&self, x: usize, y: usize) -> Option<&T> {
-        if let Some(index) = self.some_bound(x, y) {
+    pub fn get(&self, position: Position) -> Option<&T> {
+        if let Some(index) = self.some_bound(position) {
             self.values.get(index)
         } else {
             None
         }
     }
 
-    pub fn get_mut(&mut self, x: usize, y: usize) -> Option<&mut T> {
-        if let Some(index) = self.some_bound(x, y) {
+    pub fn get_mut(&mut self, position: Position) -> Option<&mut T> {
+        if let Some(index) = self.some_bound(position) {
             self.values.get_mut(index)
         } else {
             None
@@ -48,49 +53,55 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     }
 
     /// will always return value. If out of bounds, it will wrap until in bounds.
-    pub fn get_wrap(&self, x: usize, y: usize) -> &T {
+    pub fn get_wrap(&self, position: Position) -> &T {
         self.values
-            .get((x % self.width) + ((y % self.height) * self.width))
+            .get(
+                (position.x % self.size.width)
+                    + ((position.y % self.size.height) * self.size.width),
+            )
             .unwrap()
     }
 
     /// will always return value. If out of bounds, it will wrap until in bounds.
-    pub fn get_wrap_mut(&mut self, x: usize, y: usize) -> &mut T {
+    pub fn get_wrap_mut(&mut self, position: Position) -> &mut T {
         self.values
-            .get_mut((x % self.width) + ((y % self.height) * self.width))
+            .get_mut(
+                (position.x % self.size.width)
+                    + ((position.y % self.size.height) * self.size.width),
+            )
             .unwrap()
     }
 
-    pub fn set(&mut self, x: usize, y: usize, value: T) {
-        if let Some(u) = self.get_mut(x, y) {
+    pub fn set(&mut self, position: Position, value: T) {
+        if let Some(u) = self.get_mut(position) {
             *u = value;
         }
     }
 
     /// Applies func to given value and sets it back in the Matrix.
-    pub fn apply(&mut self, x: usize, y: usize, func: impl Fn(&T) -> T) {
-        if let Some(u) = self.get_mut(x, y) {
+    pub fn apply(&mut self, position: Position, func: impl Fn(&T) -> T) {
+        if let Some(u) = self.get_mut(position) {
             *u = func(u);
         }
     }
 
-    pub fn enumerate(&self) -> impl Iterator<Item = (usize, usize, &T)> {
+    pub fn enumerate(&self) -> impl Iterator<Item = (Position, &T)> {
         self.values
             .iter()
             .enumerate()
-            .map(|(i, t)| (i % self.width, i / self.width, t))
+            .map(|(i, t)| (Position::new(i % self.size.width, i / self.size.width), t))
     }
 
-    pub fn enumerate_mut(&mut self) -> impl Iterator<Item = (usize, usize, &mut T)> {
+    pub fn enumerate_mut(&mut self) -> impl Iterator<Item = (Position, &mut T)> {
         self.values
             .iter_mut()
             .enumerate()
-            .map(|(i, t)| (i % self.width, i / self.width, t))
+            .map(|(i, t)| (Position::new(i % self.size.width, i / self.size.width), t))
     }
 
     /// Overlays matrix with other given matrix starting at position (x, y).
-    pub fn overlay(&mut self, matrix: &Matrix<T>, x: usize, y: usize) {
-        self.clamp_mut(x, y, matrix.width, matrix.height)
+    pub fn overlay(&mut self, matrix: &Matrix<T>, position: Position) {
+        self.clamp_mut(position, matrix.size)
             .zip(matrix.values.iter())
             .for_each(|(t, u)| *t = u.clone())
     }
@@ -99,21 +110,19 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     pub fn overlay_iter<'a>(
         &mut self,
         iter: impl Iterator<Item = &'a T>,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
+        position: Position,
+        size: Size,
     ) where
         T: 'a,
     {
-        self.clamp_mut(x, y, width, height)
+        self.clamp_mut(position, size)
             .zip(iter)
             .for_each(|(t, u)| *t = u.clone())
     }
 
     /// Overlays matrix only with Some(T) value.
-    pub fn transparent_overlay(&mut self, matrix: &Matrix<Option<T>>, x: usize, y: usize) {
-        self.clamp_mut(x, y, matrix.width, matrix.height)
+    pub fn transparent_overlay(&mut self, matrix: &Matrix<Option<T>>, position: Position) {
+        self.clamp_mut(position, matrix.size)
             .zip(matrix.values.iter())
             .for_each(|(t, u)| {
                 if let Some(item) = u {
@@ -125,77 +134,54 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     pub fn transparent_overlay_iter<'a>(
         &mut self,
         iter: impl Iterator<Item = Option<T>>,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
+        position: Position,
+        size: Size,
     ) where
         T: 'a,
     {
-        self.clamp_mut(x, y, width, height)
-            .zip(iter)
-            .for_each(|(t, u)| {
-                if let Some(item) = u {
-                    *t = item.clone()
-                }
-            })
+        self.clamp_mut(position, size).zip(iter).for_each(|(t, u)| {
+            if let Some(item) = u {
+                *t = item.clone()
+            }
+        })
     }
 
     /// Lists values in matrix with width and height starting at (x, y). Has possibility to return
     /// less values because they're out of bounds.
-    pub fn clamp(
-        &self,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
-    ) -> impl Iterator<Item = &T> {
+    pub fn clamp(&self, position: Position, size: Size) -> impl Iterator<Item = &T> {
         self.values
-            .chunks(self.width)
-            .skip(y)
-            .take(height)
-            .flat_map(move |chunk| chunk.iter().skip(x).take(width))
+            .chunks(self.size.width)
+            .skip(position.y)
+            .take(size.height)
+            .flat_map(move |chunk| chunk.iter().skip(position.x).take(size.width))
     }
 
-    pub fn clamp_mut(
-        &mut self,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
-    ) -> impl Iterator<Item = &mut T> {
+    pub fn clamp_mut(&mut self, position: Position, size: Size) -> impl Iterator<Item = &mut T> {
         self.values
-            .chunks_mut(self.width)
-            .skip(y)
-            .take(height)
-            .flat_map(move |chunk| chunk.iter_mut().skip(x).take(width))
+            .chunks_mut(self.size.width)
+            .skip(position.y)
+            .take(size.height)
+            .flat_map(move |chunk| chunk.iter_mut().skip(position.x).take(size.width))
     }
 
-    pub fn clamp_wrap(
-        &self,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
-    ) -> impl Iterator<Item = &T> {
+    pub fn clamp_wrap(&self, position: Position, size: Size) -> impl Iterator<Item = &T> {
         self.values
-            .chunks(self.width)
+            .chunks(self.size.width)
             .cycle()
-            .skip(y)
-            .take(height)
-            .flat_map(move |chunk| chunk.iter().cycle().skip(x).take(width))
+            .skip(position.y)
+            .take(size.height)
+            .flat_map(move |chunk| chunk.iter().cycle().skip(position.x).take(size.width))
     }
 
-    pub fn clamp_to_matrix(&self, x: usize, y: usize, width: usize, height: usize) -> Self {
+    pub fn clamp_to_matrix(&self, position: Position, size: Size) -> Self {
         Self {
-            width: 0,
-            height: 0,
+            size,
             values: self
                 .values
-                .chunks(self.width)
-                .skip(y)
-                .take(height)
-                .flat_map(move |chunk| chunk.iter().skip(x).take(width))
+                .chunks(self.size.width)
+                .skip(position.y)
+                .take(size.height)
+                .flat_map(move |chunk| chunk.iter().skip(position.x).take(size.width))
                 .cloned()
                 .collect::<Vec<_>>(),
             wrapping: false,
@@ -205,27 +191,31 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     /// enumerates then clamps values
     pub fn enumerate_clamp(
         &self,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
-    ) -> impl Iterator<Item = (usize, usize, &T)> {
-        self.clamp(x, y, width, height)
-            .enumerate()
-            .map(move |(i, t)| (x + (i % self.width), y + (i / self.width), t))
+        position: Position,
+        size: Size,
+    ) -> impl Iterator<Item = (Position, &T)> {
+        self.clamp(position, size).enumerate().map(move |(i, t)| {
+            (
+                position.add(Position::new(i % self.size.width, i / self.size.width)),
+                t,
+            )
+        })
     }
 
     /// enumerates then clamps values
     pub fn enumerate_clamp_wrap(
         &self,
-        x: usize,
-        y: usize,
-        width: usize,
-        height: usize,
-    ) -> impl Iterator<Item = (usize, usize, &T)> {
-        self.clamp_wrap(x, y, width, height)
+        position: Position,
+        size: Size,
+    ) -> impl Iterator<Item = (Position, &T)> {
+        self.clamp_wrap(position, size)
             .enumerate()
-            .map(move |(i, t)| (x + (i % self.width), y + (i / self.width), t))
+            .map(move |(i, t)| {
+                (
+                    position.add(Position::new(i % self.size.width, i / self.size.width)),
+                    t,
+                )
+            })
     }
 
     /// mirrors the matrix vertically (y = 0)
@@ -235,12 +225,12 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
 
     /// returns an iterator of vertically reflected matrix
     pub fn iter_reflect_vertical(&self) -> impl Iterator<Item = &T> {
-        self.values.chunks(self.width).rev().flatten()
+        self.values.chunks(self.size.width).rev().flatten()
     }
 
     /// returns a mutible iterator of vertically reflected matrix
     pub fn iter_reflect_vertical_mut(&mut self) -> impl Iterator<Item = &mut T> {
-        self.values.chunks_mut(self.width).rev().flatten()
+        self.values.chunks_mut(self.size.width).rev().flatten()
     }
 
     /// mirrors the matrix horizontally (x = 0)
@@ -251,7 +241,7 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     /// returns an iterator of horizontally reflected matrix
     pub fn iter_reflect_horizontal(&self) -> impl Iterator<Item = &T> {
         self.values
-            .chunks(self.width)
+            .chunks(self.size.width)
             .map(|c| c.iter().rev())
             .flatten()
     }
@@ -259,7 +249,7 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     /// returns a mutible iterator of horizontally reflected matrix
     pub fn iter_reflect_horizontal_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.values
-            .chunks_mut(self.width)
+            .chunks_mut(self.size.width)
             .map(|c| c.iter_mut().rev())
             .flatten()
     }
@@ -267,16 +257,14 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     /// mirrors the matrix on the y = x axis
     pub fn reflect_diagonal(&mut self) {
         self.values = self.iter_reflect_diagonal().cloned().collect::<Vec<_>>();
-        let hold = self.width;
-        self.width = self.height;
-        self.height = hold
+        self.size.swap()
     }
 
     /// returns an iterator of diagonally reflected matrix
     pub fn iter_reflect_diagonal(&self) -> impl Iterator<Item = &T> {
-        (0..self.width).flat_map(move |i| {
+        (0..self.size.width).flat_map(move |i| {
             self.values
-                .chunks(self.width)
+                .chunks(self.size.width)
                 .flat_map(move |c| c.iter().skip(i).take(1))
         })
     }
@@ -287,16 +275,14 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
             .iter_reflect_negative_diagonal()
             .cloned()
             .collect::<Vec<_>>();
-        let hold = self.width;
-        self.width = self.height;
-        self.height = hold
+        self.size.swap()
     }
 
     /// returns an iterator of negative diagonally reflected matrix
     pub fn iter_reflect_negative_diagonal(&self) -> impl Iterator<Item = &T> {
-        (self.width..0).flat_map(move |i| {
+        (self.size.width..0).flat_map(move |i| {
             self.values
-                .chunks(self.width)
+                .chunks(self.size.width)
                 .rev()
                 .flat_map(move |c| c.iter().skip(i).take(1))
         })
@@ -305,16 +291,14 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     /// rotates the matrix to the right
     pub fn rotate_right(&mut self) {
         self.values = self.iter_rotate_right().cloned().collect::<Vec<_>>();
-        let hold = self.width;
-        self.width = self.height;
-        self.height = hold
+        self.size.swap()
     }
 
     /// returns an iterator of right rotated matrix
     pub fn iter_rotate_right(&self) -> impl Iterator<Item = &T> {
-        (0..self.width).flat_map(move |i| {
+        (0..self.size.width).flat_map(move |i| {
             self.values
-                .chunks(self.width)
+                .chunks(self.size.width)
                 .rev()
                 .flat_map(move |c| c.iter().skip(i).take(1))
         })
@@ -323,16 +307,14 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     /// rotates the matrix to the left
     pub fn rotate_left(&mut self) {
         self.values = self.iter_rotate_left().cloned().collect::<Vec<_>>();
-        let hold = self.width;
-        self.width = self.height;
-        self.height = hold
+        self.size.swap()
     }
 
     /// returns an iterator of left rotated matrix
     pub fn iter_rotate_left(&self) -> impl Iterator<Item = &T> {
-        (0..self.width).flat_map(move |i| {
+        (0..self.size.width).flat_map(move |i| {
             self.values
-                .chunks(self.width)
+                .chunks(self.size.width)
                 .flat_map(move |c| c.iter().rev().skip(i).take(1))
         })
     }
@@ -368,28 +350,23 @@ impl<T: Default + Clone + Sync + Send> Matrix<T> {
     }
 
     ///returns a matrix that is subdivided into given number of matrices
-    pub fn subdivide_matrix(
-        &self,
-        horizontal_subdivisions: usize,
-        vertical_subdivisions: usize,
-    ) -> Matrix<Self> {
-        let horizontal_length = self.width / horizontal_subdivisions;
-        let vertical_length = self.height / vertical_subdivisions;
+    pub fn subdivide_matrix(&self, subdivision_quantities: Size) -> Matrix<Self> {
+        let length_size = Size::new(
+            self.size.width / subdivision_quantities.width,
+            self.size.height / subdivision_quantities.height,
+        );
         Matrix {
-            values: (0..vertical_subdivisions)
+            values: (0..subdivision_quantities.height)
                 .flat_map(|y| {
-                    (0..horizontal_subdivisions).map(move |x| {
+                    (0..subdivision_quantities.width).map(move |x| {
                         self.clamp_to_matrix(
-                            x * horizontal_length,
-                            y * vertical_length,
-                            horizontal_length,
-                            vertical_length,
+                            Position::new(x * length_size.width, y * length_size.height),
+                            length_size,
                         )
                     })
                 })
                 .collect::<Vec<_>>(),
-            width: horizontal_subdivisions,
-            height: vertical_subdivisions,
+            size: subdivision_quantities,
             wrapping: self.wrapping,
         }
     }

@@ -1,24 +1,23 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
+use std::{
+    fmt::Debug,
+    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign},
+};
 
-pub trait Algebra<
-    T: Add<Output = T>
+pub trait Algebra: Sized + Debug {
+    type Item: Add<Output = Self::Item>
         + AddAssign
-        + Sub<Output = T>
+        + Sub<Output = Self::Item>
         + SubAssign
-        + Mul<Output = T>
+        + Mul<Output = Self::Item>
         + MulAssign
-        + Div<Output = T>
+        + Div<Output = Self::Item>
         + DivAssign
-        + Rem<Output = T>
+        + Rem<Output = Self::Item>
         + RemAssign
-        + Eq,
->: Sized
-{
-    fn new(first: T, last: T) -> Self;
-    fn first(&self) -> T;
-    fn first_mut(&mut self) -> &mut T;
-    fn last(&self) -> T;
-    fn last_mut(&mut self) -> &mut T;
+        + Eq;
+    fn new(first: Self::Item, last: Self::Item) -> Self;
+    fn first(&self) -> Self::Item;
+    fn last(&self) -> Self::Item;
 
     fn add(&self, rhs: Self) -> Self {
         Self::new(self.first() + rhs.first(), self.last() + rhs.last())
@@ -62,5 +61,17 @@ pub trait Algebra<
 
     fn eq(&self, rhs: Self) -> bool {
         self.first() == rhs.first() && self.last() == rhs.last()
+    }
+
+    fn from_tuple(tuple: (Self::Item, Self::Item)) -> Self {
+        Self::new(tuple.0, tuple.1)
+    }
+
+    fn tuple(&self) -> (Self::Item, Self::Item) {
+        (self.first(), self.last())
+    }
+
+    fn into_dual<T: Algebra<Item = Self::Item>>(&self) -> T {
+        T::new(self.first(), self.last())
     }
 }
