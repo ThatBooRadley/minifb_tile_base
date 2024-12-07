@@ -4,7 +4,7 @@ use crate::tools::{
     transform::{Position, Size},
 };
 
-use super::{color::ColorMap, pixel::Pixel, tile::Tile};
+use super::{color_map::ColorMap, pixel::Pixel, tile::Tile};
 
 /// Where each tile is placed
 pub struct TileMap<T: Tile> {
