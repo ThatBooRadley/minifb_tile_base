@@ -1,8 +1,11 @@
+use core::panic;
+
 use minifb::{Key, Scale};
 use minifb_tile_base::{
     entity::entity::Entity,
-    graphics::{map::TileMap, pixel::Pixel, tile::Tile},
+    graphics::{map::TileMap, tile::Tile},
     tools::{
+        color::Color,
         dual_trait::Algebra,
         matrix::Matrix,
         transform::{Dimensions, Position, Rotation, Transform},
@@ -18,15 +21,15 @@ const DIMENSIONS: Dimensions = Dimensions {
 #[derive(Clone)]
 struct Player {
     transform: Transform,
-    matrix: Matrix<Pixel>,
+    matrix: Matrix<Option<Color>>,
 }
 
 impl Tile for Player {
-    fn get_iter(&self) -> impl Iterator<Item = &Pixel> {
-        self.matrix.values.iter()
+    fn get_iter(&self) -> impl Iterator<Item = Option<Color>> {
+        self.matrix.values.iter().copied()
     }
 
-    fn get_matrix(&self) -> &Matrix<Pixel> {
+    fn get_matrix(&self) -> &Matrix<Option<Color>> {
         &self.matrix
     }
 }
@@ -42,15 +45,15 @@ impl Entity for Player {
 
 #[derive(Clone)]
 enum TileBase {
-    ONE(Matrix<Pixel>),
-    TWO(Matrix<Pixel>),
-    THREE(Matrix<Pixel>),
-    FOUR(Matrix<Pixel>),
-    FIVE(Matrix<Pixel>),
+    ONE(Matrix<Option<Color>>),
+    TWO(Matrix<Option<Color>>),
+    THREE(Matrix<Option<Color>>),
+    FOUR(Matrix<Option<Color>>),
+    FIVE(Matrix<Option<Color>>),
 }
 
 impl TileBase {
-    fn from_usize(i: usize, matrix: Matrix<Pixel>) -> Self {
+    fn from_usize(i: usize, matrix: Matrix<Option<Color>>) -> Self {
         match i % 5 {
             0 => Self::ONE(matrix),
             1 => Self::TWO(matrix),
@@ -62,11 +65,11 @@ impl TileBase {
 }
 
 impl Tile for TileBase {
-    fn get_iter(&self) -> impl Iterator<Item = &Pixel> {
-        self.get_matrix().values.iter()
+    fn get_iter(&self) -> impl Iterator<Item = Option<Color>> {
+        self.get_matrix().values.iter().copied()
     }
 
-    fn get_matrix(&self) -> &Matrix<Pixel> {
+    fn get_matrix(&self) -> &Matrix<Option<Color>> {
         match self {
             Self::ONE(m) | Self::TWO(m) | Self::THREE(m) | Self::FOUR(m) | Self::FIVE(m) => m,
         }
@@ -74,6 +77,9 @@ impl Tile for TileBase {
 }
 
 fn main() {
+    println!("u32: {}", size_of::<u32>());
+    println!("Color: {}", size_of::<Color>());
+
     let mut window_controller = WindowController::new("title", DIMENSIONS, Scale::X4, true);
     window_controller.matrix.values.fill(500.into());
 
@@ -82,22 +88,22 @@ fn main() {
         matrix: Matrix {
             dimensions: Dimensions::splat(4),
             values: vec![
-                Pixel::None,
-                Pixel::Color(0xFF0000.into()),
-                Pixel::Color(0xFF0000.into()),
-                Pixel::None,
-                Pixel::Color(0xFFFFFF.into()),
-                Pixel::Color(0xFF0000.into()),
-                Pixel::Color(0xFF0000.into()),
-                Pixel::Color(0xFFFFFF.into()),
-                Pixel::Color(0xFF0000.into()),
-                Pixel::Color(0xFF0000.into()),
-                Pixel::Color(0xFF0000.into()),
-                Pixel::Color(0xFF0000.into()),
-                Pixel::None,
-                Pixel::Color(0xFF0000.into()),
-                Pixel::Color(0xFF0000.into()),
-                Pixel::None,
+                None,
+                Some(0xFF0000.into()),
+                Some(0xFF0000.into()),
+                None,
+                Some(0xFFFFFF.into()),
+                Some(0xFF0000.into()),
+                Some(0xFF0000.into()),
+                Some(0xFFFFFF.into()),
+                Some(0xFF0000.into()),
+                Some(0xFF0000.into()),
+                Some(0xFF0000.into()),
+                Some(0xFF0000.into()),
+                None,
+                Some(0xFF0000.into()),
+                Some(0xFF0000.into()),
+                None,
             ],
             wrapping: false,
         },
@@ -112,7 +118,7 @@ fn main() {
                     Matrix {
                         values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
                             .iter()
-                            .map(|u| Pixel::Value(*u))
+                            .map(|u| Value(*u))
                             .collect::<Vec<_>>(),
                         dimensions: Dimensions::splat(4),
                         wrapping: false,
@@ -124,7 +130,7 @@ fn main() {
                         values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
                             .iter()
                             .rev()
-                            .map(|u| Pixel::Value(*u))
+                            .map(|u| Value(*u))
                             .collect::<Vec<_>>(),
 
                         dimensions: Dimensions::splat(4),
@@ -136,7 +142,7 @@ fn main() {
                     Matrix {
                         values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
                             .iter()
-                            .map(|u| Pixel::Value(*u))
+                            .map(|u| Value(*u))
                             .collect::<Vec<_>>(),
 
                         dimensions: Dimensions::splat(4),
@@ -149,7 +155,7 @@ fn main() {
                         values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
                             .iter()
                             .rev()
-                            .map(|u| Pixel::Value(*u))
+                            .map(|u| Value(*u))
                             .collect::<Vec<_>>(),
 
                         dimensions: Dimensions::splat(4),
@@ -161,7 +167,7 @@ fn main() {
                     Matrix {
                         values: [3, 1, 2, 0, 7, 5, 6, 4, 11, 9, 10, 8, 15, 13, 14, 12]
                             .iter()
-                            .map(|u| Pixel::Value(*u))
+                            .map(|u| Value(*u))
                             .collect::<Vec<_>>(),
 
                         dimensions: Dimensions::splat(4),
@@ -177,6 +183,9 @@ fn main() {
         });
     */
     map.update_buffer();
+    window_controller
+        .update_buffer(map.buffer.values.iter().copied())
+        .expect("update failed");
 
     while window_controller.window.is_open() && !window_controller.window.is_key_down(Key::Escape) {
         window_controller
@@ -206,6 +215,8 @@ fn main() {
         window_controller
             .matrix
             .overlay(&map.buffer, Position::splat(0));
-        window_controller.update_with_entities(&mut [player.clone()])
+        window_controller
+            .update_with_entities(&mut [player.clone()])
+            .expect("entity update failed")
     }
 }

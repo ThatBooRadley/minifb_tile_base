@@ -1,15 +1,13 @@
-use core::panic;
-
 use crate::{
     entity::entity::Entity,
-    graphics::{pixel::Pixel, tile::Tile},
+    graphics::tile::Tile,
     tools::{
         color::Color,
         matrix::Matrix,
         transform::{Dimensions, Transform},
     },
 };
-use minifb::{Scale, ScaleMode, Window, WindowOptions};
+use minifb::{Error, Scale, ScaleMode, Window, WindowOptions};
 
 /// WindowController holds the main interaction between the actual matrix holding the tiles and the
 /// minifb Window.
@@ -51,22 +49,21 @@ impl WindowController {
     }
 
     /// Update Window buffer every frame wanted.
-    pub fn update(&mut self) {
-        self.window
-            .update_with_buffer(
-                &self.buffer,
-                self.matrix.dimensions.width,
-                self.matrix.dimensions.height,
-            )
-            .unwrap_or_else(|e| panic!("{}", e))
+    pub fn update(&mut self) -> Result<(), Error> {
+        self.window.update_with_buffer(
+            &self.buffer,
+            self.matrix.dimensions.width,
+            self.matrix.dimensions.height,
+        )
     }
 
-    pub fn update_buffer(&mut self, buffer: impl Iterator<Item = Color>) {
-        self.buffer = buffer.map(|c| c.into()).collect::<Vec<_>>()
+    pub fn update_buffer(&mut self, buffer: impl Iterator<Item = Color>) -> Result<(), Error> {
+        self.buffer = buffer.map(|c| u32::from(c)).collect::<Vec<_>>();
+        self.update()
     }
 
     /// Updates window buffer each frame called and adds entities.
-    pub fn update_with_entities(&mut self, entities: &mut [impl Entity]) {
+    pub fn update_with_entities(&mut self, entities: &mut [impl Entity]) -> Result<(), Error> {
         let mut matrix_with_entities = self.matrix.clone();
         entities.sort_by(|a, b| a.get_order().cmp(&b.get_order()));
 
@@ -74,13 +71,7 @@ impl WindowController {
             let (Transform { position, rotation }, tile) = e.get_position_matrix();
             let tile_matrix = tile.get_matrix();
             matrix_with_entities.transparent_overlay_iter(
-                tile_matrix.iter_rotate(*rotation).map(|p| {
-                    if let Pixel::Color(u) = p {
-                        Some(*u)
-                    } else {
-                        None
-                    }
-                }),
+                tile_matrix.iter_rotate(*rotation).copied(),
                 *position,
                 tile_matrix.dimensions,
             )

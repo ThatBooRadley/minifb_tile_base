@@ -5,7 +5,7 @@ use crate::tools::{
     transform::{Dimensions, Position},
 };
 
-use super::{pixel::Pixel, tile::Tile};
+use super::tile::Tile;
 
 /// Where each tile is placed
 pub struct TileMap<T: Tile> {
@@ -31,10 +31,7 @@ impl<T: Tile> TileMap<T> {
         self.map.enumerate().for_each(|(position, u)| {
             if let Some(tile) = u {
                 self.buffer.transparent_overlay_iter(
-                    tile.get_iter().map(|p| match p {
-                        Pixel::Color(u) => Some(*u),
-                        Pixel::None => None,
-                    }),
+                    tile.get_iter(),
                     position.mul(self.tile_dimensions.into_dual::<Position>()),
                     self.tile_dimensions,
                 )
