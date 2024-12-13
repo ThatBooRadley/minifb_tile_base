@@ -51,13 +51,54 @@ enum TileBase {
 }
 
 impl TileBase {
-    fn from_usize(i: usize, matrix: Matrix<Pixel>) -> Self {
+    fn from_usize(i: usize) -> Self {
         match i % 5 {
-            0 => Self::ONE(matrix),
-            1 => Self::TWO(matrix),
-            2 => Self::THREE(matrix),
-            3 => Self::FOUR(matrix),
-            _ => Self::FIVE(matrix),
+            0 => Self::ONE(Matrix {
+                values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                    .iter()
+                    .map(|u| Some((*u * 16).into()))
+                    .collect::<Vec<_>>(),
+                dimensions: Dimensions::splat(4),
+                wrapping: false,
+            }),
+            1 => Self::TWO(Matrix {
+                values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                    .iter()
+                    .rev()
+                    .map(|u| Some((*u * 16).into()))
+                    .collect::<Vec<_>>(),
+
+                dimensions: Dimensions::splat(4),
+                wrapping: false,
+            }),
+            2 => Self::THREE(Matrix {
+                values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
+                    .iter()
+                    .map(|u| Some((*u * 16).into()))
+                    .collect::<Vec<_>>(),
+
+                dimensions: Dimensions::splat(4),
+                wrapping: false,
+            }),
+            3 => Self::FOUR(Matrix {
+                values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
+                    .iter()
+                    .rev()
+                    .map(|u| Some((*u * 16).into()))
+                    .collect::<Vec<_>>(),
+
+                dimensions: Dimensions::splat(4),
+                wrapping: false,
+            }),
+            _ => Self::FIVE(Matrix {
+                values: [3, 1, 2, 0, 7, 5, 6, 4, 11, 9, 10, 8, 15, 13, 14, 12]
+                    .iter()
+                    .map(|u| Some((*u * 16).into()))
+                    .collect::<Vec<_>>(),
+
+                dimensions: Dimensions::splat(4),
+                wrapping: false,
+            }),
         }
     }
 }
@@ -116,77 +157,14 @@ fn main() {
     };
 
     let mut map = TileMap::<TileBase>::new(Dimensions::splat(25), false, Dimensions::splat(4));
+    map.map
+        .enumerate_mut()
+        .for_each(|(position, u)| *u = Some(TileBase::from_usize(position.mul_self() % 5)));
     /*
-        map.map.enumerate_mut().for_each(|(position, u)| {
-            *u = Some(match position.mul_self() % 5 {
-                0 => TileBase::from_usize(
-                    0,
-                    Matrix {
-                        values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-                            .iter()
-                            .map(|u| Value(*u))
-                            .collect::<Vec<_>>(),
-                        dimensions: Dimensions::splat(4),
-                        wrapping: false,
-                    },
-                ),
-                1 => TileBase::from_usize(
-                    1,
-                    Matrix {
-                        values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-                            .iter()
-                            .rev()
-                            .map(|u| Value(*u))
-                            .collect::<Vec<_>>(),
-
-                        dimensions: Dimensions::splat(4),
-                        wrapping: false,
-                    },
-                ),
-                2 => TileBase::from_usize(
-                    2,
-                    Matrix {
-                        values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
-                            .iter()
-                            .map(|u| Value(*u))
-                            .collect::<Vec<_>>(),
-
-                        dimensions: Dimensions::splat(4),
-                        wrapping: false,
-                    },
-                ),
-                3 => TileBase::from_usize(
-                    3,
-                    Matrix {
-                        values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
-                            .iter()
-                            .rev()
-                            .map(|u| Value(*u))
-                            .collect::<Vec<_>>(),
-
-                        dimensions: Dimensions::splat(4),
-                        wrapping: false,
-                    },
-                ),
-                _ => TileBase::from_usize(
-                    4,
-                    Matrix {
-                        values: [3, 1, 2, 0, 7, 5, 6, 4, 11, 9, 10, 8, 15, 13, 14, 12]
-                            .iter()
-                            .map(|u| Value(*u))
-                            .collect::<Vec<_>>(),
-
-                        dimensions: Dimensions::splat(4),
-                        wrapping: false,
-                    },
-                ),
-            })
-        });
-
-        (0..16).for_each(|i| {
-            map.palatte.add(i, 0xF << i);
-            println!("None {}, {:?}", i, map.palatte.get(i))
-        });
+          (0..16).for_each(|i| {
+              map.palatte.add(i, 0xF << i);
+              println!("None {}, {:?}", i, map.palatte.get(i))
+          });
     */
     map.update_buffer();
     window_controller
