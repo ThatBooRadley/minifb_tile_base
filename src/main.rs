@@ -1,11 +1,9 @@
-use core::panic;
-
 use minifb::{Key, Scale};
 use minifb_tile_base::{
     entity::entity::Entity,
     graphics::{map::TileMap, tile::Tile},
     tools::{
-        color::Color,
+        color::{Color, Pixel},
         dual_trait::Algebra,
         matrix::Matrix,
         transform::{Dimensions, Position, Rotation, Transform},
@@ -21,15 +19,15 @@ const DIMENSIONS: Dimensions = Dimensions {
 #[derive(Clone)]
 struct Player {
     transform: Transform,
-    matrix: Matrix<Option<Color>>,
+    matrix: Matrix<Pixel>,
 }
 
 impl Tile for Player {
-    fn get_iter(&self) -> impl Iterator<Item = Option<Color>> {
+    fn get_iter(&self) -> impl Iterator<Item = Pixel> {
         self.matrix.values.iter().copied()
     }
 
-    fn get_matrix(&self) -> &Matrix<Option<Color>> {
+    fn get_matrix(&self) -> &Matrix<Pixel> {
         &self.matrix
     }
 }
@@ -45,15 +43,15 @@ impl Entity for Player {
 
 #[derive(Clone)]
 enum TileBase {
-    ONE(Matrix<Option<Color>>),
-    TWO(Matrix<Option<Color>>),
-    THREE(Matrix<Option<Color>>),
-    FOUR(Matrix<Option<Color>>),
-    FIVE(Matrix<Option<Color>>),
+    ONE(Matrix<Pixel>),
+    TWO(Matrix<Pixel>),
+    THREE(Matrix<Pixel>),
+    FOUR(Matrix<Pixel>),
+    FIVE(Matrix<Pixel>),
 }
 
 impl TileBase {
-    fn from_usize(i: usize, matrix: Matrix<Option<Color>>) -> Self {
+    fn from_usize(i: usize, matrix: Matrix<Pixel>) -> Self {
         match i % 5 {
             0 => Self::ONE(matrix),
             1 => Self::TWO(matrix),
@@ -65,11 +63,11 @@ impl TileBase {
 }
 
 impl Tile for TileBase {
-    fn get_iter(&self) -> impl Iterator<Item = Option<Color>> {
+    fn get_iter(&self) -> impl Iterator<Item = Pixel> {
         self.get_matrix().values.iter().copied()
     }
 
-    fn get_matrix(&self) -> &Matrix<Option<Color>> {
+    fn get_matrix(&self) -> &Matrix<Pixel> {
         match self {
             Self::ONE(m) | Self::TWO(m) | Self::THREE(m) | Self::FOUR(m) | Self::FIVE(m) => m,
         }
@@ -77,8 +75,16 @@ impl Tile for TileBase {
 }
 
 fn main() {
-    println!("u32: {}", size_of::<u32>());
-    println!("Color: {}", size_of::<Color>());
+    println!(
+        "u32: {}, Option<u32>: {}",
+        size_of::<u32>(),
+        size_of::<Option<u32>>()
+    );
+    println!(
+        "Color: {}, Pixel: {}",
+        size_of::<Color>(),
+        size_of::<Pixel>()
+    );
 
     let mut window_controller = WindowController::new("title", DIMENSIONS, Scale::X4, true);
     window_controller.matrix.values.fill(500.into());

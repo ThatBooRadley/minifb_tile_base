@@ -7,7 +7,6 @@ pub struct Color {
 
 impl From<u32> for Color {
     fn from(value: u32) -> Self {
-        // value as Color
         Color {
             red: (value >> 16) as u8,
             green: (value >> 8) as u8,
@@ -36,7 +35,8 @@ impl Color {
 
 impl From<Color> for u32 {
     fn from(value: Color) -> Self {
-        //value as u32
         ((value.red as u32) << 16) | ((value.green as u32) << 8) | (value.blue as u32)
     }
 }
+
+pub type Pixel = Option<Color>;
