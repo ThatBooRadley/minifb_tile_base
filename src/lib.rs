@@ -2,6 +2,7 @@
 //! Mainly, this is for personal use so I will update this semi-infrequently.
 
 pub mod tools {
+    pub mod color;
     pub mod dual_trait;
     pub mod matrix;
     pub mod timer;
@@ -12,7 +13,6 @@ pub mod entity {
     pub mod entity;
 }
 pub mod graphics {
-    pub mod color_map;
     pub mod library;
     pub mod map;
     pub mod pixel;

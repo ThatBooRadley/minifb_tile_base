@@ -42,12 +42,12 @@ impl Algebra for Position {
 }
 
 #[derive(Clone, Copy, Default, Debug)]
-pub struct Size {
+pub struct Dimensions {
     pub width: usize,
     pub height: usize,
 }
 
-impl Algebra for Size {
+impl Algebra for Dimensions {
     type Item = usize;
 
     fn new(first: Self::Item, last: Self::Item) -> Self {
@@ -73,7 +73,7 @@ impl Algebra for Size {
     }
 }
 
-impl Size {
+impl Dimensions {
     pub fn area(&self) -> usize {
         self.mul_self()
     }

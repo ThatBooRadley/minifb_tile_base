@@ -1,30 +1,28 @@
 use crate::tools::{
+    color::Color,
     dual_trait::Algebra,
     matrix::Matrix,
-    transform::{Position, Size},
+    transform::{Dimensions, Position},
 };
 
-use super::{color_map::ColorMap, pixel::Pixel, tile::Tile};
+use super::{pixel::Pixel, tile::Tile};
 
 /// Where each tile is placed
 pub struct TileMap<T: Tile> {
     /// matrix storing the tiles in the map
     pub map: Matrix<Option<T>>,
-    /// size in pixels of each tile
-    tile_size: Size,
-    /// How the tiles are displayed
-    pub palatte: ColorMap,
+    /// dimensions in pixels of each tile
+    tile_dimensions: Dimensions,
     /// color rendition of map
-    pub buffer: Matrix<u32>,
+    pub buffer: Matrix<Color>,
 }
 
 impl<T: Tile> TileMap<T> {
-    pub fn new(size: Size, wrapping: bool, tile_size: Size) -> Self {
+    pub fn new(dimensions: Dimensions, wrapping: bool, tile_dimensions: Dimensions) -> Self {
         Self {
-            map: Matrix::new(size, wrapping),
-            tile_size,
-            palatte: ColorMap::new(),
-            buffer: Matrix::new(size.mul(tile_size), wrapping),
+            map: Matrix::new(dimensions, wrapping),
+            tile_dimensions,
+            buffer: Matrix::new(dimensions.mul(tile_dimensions), wrapping),
         }
     }
 
@@ -32,14 +30,13 @@ impl<T: Tile> TileMap<T> {
     pub fn update_buffer(&mut self) {
         self.map.enumerate().for_each(|(position, u)| {
             if let Some(tile) = u {
-                self.buffer.overlay_iter(
+                self.buffer.transparent_overlay_iter(
                     tile.get_iter().map(|p| match p {
-                        Pixel::Color(u) => u,
-                        Pixel::Value(v) => self.palatte.get(*v).unwrap_or(&0),
-                        Pixel::None => &0,
+                        Pixel::Color(u) => Some(*u),
+                        Pixel::None => None,
                     }),
-                    position.mul(self.tile_size.into_dual::<Position>()),
-                    self.tile_size,
+                    position.mul(self.tile_dimensions.into_dual::<Position>()),
+                    self.tile_dimensions,
                 )
             }
         })

@@ -5,12 +5,12 @@ use minifb_tile_base::{
     tools::{
         dual_trait::Algebra,
         matrix::Matrix,
-        transform::{Position, Rotation, Size, Transform},
+        transform::{Dimensions, Position, Rotation, Transform},
     },
     window::WindowController,
 };
 
-const SIZE: Size = Size {
+const DIMENSIONS: Dimensions = Dimensions {
     width: 100,
     height: 100,
 };
@@ -74,107 +74,108 @@ impl Tile for TileBase {
 }
 
 fn main() {
-    let mut window_controller = WindowController::new("title", SIZE, Scale::X4, true);
-    window_controller.matrix.values.fill(500);
+    let mut window_controller = WindowController::new("title", DIMENSIONS, Scale::X4, true);
+    window_controller.matrix.values.fill(500.into());
 
     let mut player = Player {
         transform: Transform::default(),
         matrix: Matrix {
-            size: Size::splat(4),
+            dimensions: Dimensions::splat(4),
             values: vec![
                 Pixel::None,
-                Pixel::Color(0xFF0000),
-                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFF0000.into()),
+                Pixel::Color(0xFF0000.into()),
                 Pixel::None,
-                Pixel::Color(0xFFFFFF),
-                Pixel::Color(0xFF0000),
-                Pixel::Color(0xFF0000),
-                Pixel::Color(0xFFFFFF),
-                Pixel::Color(0xFF0000),
-                Pixel::Color(0xFF0000),
-                Pixel::Color(0xFF0000),
-                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFFFFFF.into()),
+                Pixel::Color(0xFF0000.into()),
+                Pixel::Color(0xFF0000.into()),
+                Pixel::Color(0xFFFFFF.into()),
+                Pixel::Color(0xFF0000.into()),
+                Pixel::Color(0xFF0000.into()),
+                Pixel::Color(0xFF0000.into()),
+                Pixel::Color(0xFF0000.into()),
                 Pixel::None,
-                Pixel::Color(0xFF0000),
-                Pixel::Color(0xFF0000),
+                Pixel::Color(0xFF0000.into()),
+                Pixel::Color(0xFF0000.into()),
                 Pixel::None,
             ],
             wrapping: false,
         },
     };
 
-    let mut map = TileMap::new(Size::splat(25), false, Size::splat(4));
-    map.map.enumerate_mut().for_each(|(position, u)| {
-        *u = Some(match position.mul_self() % 5 {
-            0 => TileBase::from_usize(
-                0,
-                Matrix {
-                    values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-                        .iter()
-                        .map(|u| Pixel::Value(*u))
-                        .collect::<Vec<_>>(),
-                    size: Size::splat(4),
-                    wrapping: false,
-                },
-            ),
-            1 => TileBase::from_usize(
-                1,
-                Matrix {
-                    values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
-                        .iter()
-                        .rev()
-                        .map(|u| Pixel::Value(*u))
-                        .collect::<Vec<_>>(),
+    let mut map = TileMap::<TileBase>::new(Dimensions::splat(25), false, Dimensions::splat(4));
+    /*
+        map.map.enumerate_mut().for_each(|(position, u)| {
+            *u = Some(match position.mul_self() % 5 {
+                0 => TileBase::from_usize(
+                    0,
+                    Matrix {
+                        values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                            .iter()
+                            .map(|u| Pixel::Value(*u))
+                            .collect::<Vec<_>>(),
+                        dimensions: Dimensions::splat(4),
+                        wrapping: false,
+                    },
+                ),
+                1 => TileBase::from_usize(
+                    1,
+                    Matrix {
+                        values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+                            .iter()
+                            .rev()
+                            .map(|u| Pixel::Value(*u))
+                            .collect::<Vec<_>>(),
 
-                    size: Size::splat(4),
-                    wrapping: false,
-                },
-            ),
-            2 => TileBase::from_usize(
-                2,
-                Matrix {
-                    values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
-                        .iter()
-                        .map(|u| Pixel::Value(*u))
-                        .collect::<Vec<_>>(),
+                        dimensions: Dimensions::splat(4),
+                        wrapping: false,
+                    },
+                ),
+                2 => TileBase::from_usize(
+                    2,
+                    Matrix {
+                        values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
+                            .iter()
+                            .map(|u| Pixel::Value(*u))
+                            .collect::<Vec<_>>(),
 
-                    size: Size::splat(4),
-                    wrapping: false,
-                },
-            ),
-            3 => TileBase::from_usize(
-                3,
-                Matrix {
-                    values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
-                        .iter()
-                        .rev()
-                        .map(|u| Pixel::Value(*u))
-                        .collect::<Vec<_>>(),
+                        dimensions: Dimensions::splat(4),
+                        wrapping: false,
+                    },
+                ),
+                3 => TileBase::from_usize(
+                    3,
+                    Matrix {
+                        values: [0, 2, 1, 3, 4, 6, 5, 7, 8, 10, 9, 11, 12, 14, 13, 15]
+                            .iter()
+                            .rev()
+                            .map(|u| Pixel::Value(*u))
+                            .collect::<Vec<_>>(),
 
-                    size: Size::splat(4),
-                    wrapping: false,
-                },
-            ),
-            _ => TileBase::from_usize(
-                4,
-                Matrix {
-                    values: [3, 1, 2, 0, 7, 5, 6, 4, 11, 9, 10, 8, 15, 13, 14, 12]
-                        .iter()
-                        .map(|u| Pixel::Value(*u))
-                        .collect::<Vec<_>>(),
+                        dimensions: Dimensions::splat(4),
+                        wrapping: false,
+                    },
+                ),
+                _ => TileBase::from_usize(
+                    4,
+                    Matrix {
+                        values: [3, 1, 2, 0, 7, 5, 6, 4, 11, 9, 10, 8, 15, 13, 14, 12]
+                            .iter()
+                            .map(|u| Pixel::Value(*u))
+                            .collect::<Vec<_>>(),
 
-                    size: Size::splat(4),
-                    wrapping: false,
-                },
-            ),
-        })
-    });
+                        dimensions: Dimensions::splat(4),
+                        wrapping: false,
+                    },
+                ),
+            })
+        });
 
-    (0..16).for_each(|i| {
-        map.palatte.add(i, 0xF << i);
-        println!("None {}, {:?}", i, map.palatte.get(i))
-    });
-
+        (0..16).for_each(|i| {
+            map.palatte.add(i, 0xF << i);
+            println!("None {}, {:?}", i, map.palatte.get(i))
+        });
+    */
     map.update_buffer();
 
     while window_controller.window.is_open() && !window_controller.window.is_key_down(Key::Escape) {

@@ -4,8 +4,9 @@ use crate::{
     entity::entity::Entity,
     graphics::{pixel::Pixel, tile::Tile},
     tools::{
+        color::Color,
         matrix::Matrix,
-        transform::{Size, Transform},
+        transform::{Dimensions, Transform},
     },
 };
 use minifb::{Scale, ScaleMode, Window, WindowOptions};
@@ -14,8 +15,10 @@ use minifb::{Scale, ScaleMode, Window, WindowOptions};
 /// minifb Window.
 
 pub struct WindowController {
-    /// Where tiles to be displayed are stored.
-    pub matrix: Matrix<u32>,
+    /// Where colors to be displayed are stored.
+    pub matrix: Matrix<Color>,
+    /// The actual values that are transfered to the window
+    buffer: Vec<u32>,
     /// Provided by minifb, the device that displays the tiles.
     pub window: Window,
 }
@@ -24,11 +27,11 @@ impl WindowController {
     /// Creates a new WindowController with intended matrix width and height.
     /// The scale is only initial scale when the Window is created. It may be rescaled.
     /// The Window is set with target 60fps.
-    pub fn new(name: &str, size: Size, scale: Scale, wrapping: bool) -> Self {
+    pub fn new(name: &str, dimensions: Dimensions, scale: Scale, wrapping: bool) -> Self {
         let mut window = Window::new(
             name,
-            size.width,
-            size.height,
+            dimensions.width,
+            dimensions.height,
             WindowOptions {
                 scale_mode: ScaleMode::AspectRatioStretch,
                 scale,
@@ -41,7 +44,8 @@ impl WindowController {
         window.set_target_fps(60);
 
         Self {
-            matrix: Matrix::new(size, wrapping),
+            matrix: Matrix::new(dimensions, wrapping),
+            buffer: vec![0; dimensions.area()],
             window,
         }
     }
@@ -50,11 +54,15 @@ impl WindowController {
     pub fn update(&mut self) {
         self.window
             .update_with_buffer(
-                &self.matrix.values,
-                self.matrix.size.width,
-                self.matrix.size.height,
+                &self.buffer,
+                self.matrix.dimensions.width,
+                self.matrix.dimensions.height,
             )
             .unwrap_or_else(|e| panic!("{}", e))
+    }
+
+    pub fn update_buffer(&mut self, buffer: impl Iterator<Item = Color>) {
+        self.buffer = buffer.map(|c| c.into()).collect::<Vec<_>>()
     }
 
     /// Updates window buffer each frame called and adds entities.
@@ -74,16 +82,10 @@ impl WindowController {
                     }
                 }),
                 *position,
-                tile_matrix.size,
+                tile_matrix.dimensions,
             )
         });
 
-        self.window
-            .update_with_buffer(
-                &matrix_with_entities.values,
-                matrix_with_entities.size.width,
-                matrix_with_entities.size.height,
-            )
-            .unwrap_or_else(|e| panic!("{}", e))
+        self.update_buffer(matrix_with_entities.values.iter().copied())
     }
 }
